@@ -1,0 +1,10 @@
+# Config file for 'vcpm' i.e. VirtualCpm.jar
+#
+# set top-level directory, uncomment property:
+#vcpm_root_dir = /path/to/VCPM
+
+# CP/M drive search order
+vcpm_dso = def,a:,b,c
+
+# eliminate extraneous output
+silent

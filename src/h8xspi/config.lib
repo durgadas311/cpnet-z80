@@ -1,0 +1,12 @@
+; H8xSPI board for H8/H89 systems.
+
+SPIDEV	equ	H8xSPI
+
+spi	equ	40h	; base port of H8-WIZx50io SPI interface
+
+spi$wr	equ	spi+0
+spi$rd	equ	spi+0
+spi$ctl	equ	spi+1
+
+WZSCS	equ	0001b	; ctl port for WizNET /CS
+

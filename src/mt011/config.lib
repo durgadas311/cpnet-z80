@@ -1,0 +1,12 @@
+; MT011_SPI_WIZNET board for RC2014-Z80 systems.
+
+SPIDEV	equ	MT011
+
+spi	equ	5ch	; base port of MT011_SPI_WIZNET SPI interface
+
+spi$wr	equ	spi+0
+spi$rd	equ	spi+1
+spi$ctl	equ	spi+2
+
+WZSCS	equ	1000b	; ctl port for WizNET /CS
+WZRST	equ	0001b	; TODO: implement RESET?

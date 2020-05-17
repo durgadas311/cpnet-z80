@@ -1,0 +1,4 @@
+; HBAs for W5500 modules
+H8xSPI	equ	1	; H8xSPI board for H8/H89 systems. Includes NVRAM.
+MT011	equ	2	; MT011_SPI_WIZNET board for RC2014-Z80 systems.
+
