@@ -4,9 +4,9 @@ the Heathkit H8/H89 and the RC2014.
 
 Included is support for CP/M 3.
 
-In the case of RC2014 the added ethernet support board is the MT011 board.  Find it here https://github.com/markt4311/MT011.
-If you don't know about the RC2014 you can find info at tindi.com (to buy parts), Google group https://groups.google.com/forum/#!forum/rc2014-z80
-and the creator of the RC2014 at  www.rc2014.co.uk.
+In the case of RC2014 the added ethernet support board is the MT011 board.  Find it here [MT011](https://github.com/markt4311/MT011).
+If you don't know about the RC2014 you can find info at tindi.com (to buy parts), 
+Google group [RC2014-z80](https://groups.google.com/forum/#!forum/rc2014-z80) and the creator of the [RC2014](www.rc2014.co.uk).
 
 For the Heathkit H8/H89, the board is the H8xSPI which includes an NVRAM chip as well,
 used for storing network configuration.
@@ -78,25 +78,26 @@ The following assume that you are running CP/M 2.2 or ZSDOS.
 
 Here is a submit file helpful for starting cpnet on your CP/M 2.2 system.  Pay attention to the
 notes.
-	C>type cpnet.sub
-	c:ifconfig
+```
+	#C>type cpnet.sub
+	#c:ifconfig
 ^^^^^^^^^^^^  this is a program that sets up the MT011 board, find it at https://github.com/jayacotton/inettools-z80
-	b:pip a:=c:ccp.spr
+	#b:pip a:=c:ccp.spr
 ^^^^^^^^^  I assume that the cpnet kit is installed on your c drive.
-	c:wizcfg 0 0 192.168.0.120 31100 45
+	#c:wizcfg 0 0 192.168.0.120 31100 45
 ^^^^^^^^^^^^^^this address will need to adjusted for your local server.
-	c:cpnetldr
-	c:network k:=c:[0]
+	#c:cpnetldr
+	#c:network k:=c:[0]
 ^^^^^^^^^^^^^^ I publish 2 pseudo drives on my local server.
-	c:network l:=d:[0]
+	#c:network l:=d:[0]
 ^^^^^^^^^^^^^^  And these drive letters are not going to work for everyone.
-
+```
 After running the submit file, you should be configured for CPNET.  You can run cpnetsts
 to check that everything is working.  You will also see activity on your local server
 talking about the connection.
 
 C>cpnetsts
-
+```
 CP/NET 1.2 Status
 =================
 Requester ID = 03H
@@ -120,6 +121,7 @@ Disk device status:
   Drive P: = LOCAL
 Console Device = LOCAL
 List Device = LOCAL
+```
 
 From here you and copy/run/what ever the files on your pseudo drives.  You can also
 copy/install from the pseudo drive.  In addition any file you copy to the pseudo drive
