@@ -92,9 +92,9 @@ c:ifconfig
 	      https://github.com/jayacotton/inettools-z80
 b:pip a:=c:ccp.spr
 ^^^^^^^^^  I assume that the cpnet kit is installed on your c drive.
+c:cpnetldr
 c:wizcfg 0 0 192.168.0.120 31100 45
 ^^^^^^^^^^^^^^this address will need to adjusted for your local server.
-c:cpnetldr
 c:network k:=c:[0]
 ^^^^^^^^^^^^^^ I publish 2 pseudo drives on my local server.
 c:network l:=d:[0]
@@ -131,7 +131,7 @@ Console Device = LOCAL
 List Device = LOCAL
 ```
 
-From here you and copy/run/what ever the files on your pseudo drives.  You can also
+From here you can copy/run/what ever the files on your pseudo drives.  You can also
 copy/install from the pseudo drive.  In addition any file you copy to the pseudo drive
 on your server system will be accessable instantly on your CP/M system.
 
