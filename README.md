@@ -1,14 +1,19 @@
 # cpnet-z80
 CPNET-Z80 is a port/implementation of DRI CPNET with drivers for the Wiznet w5500.  This code supports both
-the Heathkit (add name here) and the RC2014.  
+the Heathkit H8/H89 and the RC2014.  
 
-In the case of RC2140 the added ethernet support board is the MT011 board.  Find it here https://github.com/markt4311/MT011.
+Included is support for CP/M 3.
+
+In the case of RC2014 the added ethernet support board is the MT011 board.  Find it here https://github.com/markt4311/MT011.
 If you don't know about the RC2014 you can find info at tindi.com (to buy parts), Google group https://groups.google.com/forum/#!forum/rc2014-z80
 and the creator of the RC2014 at  www.rc2014.co.uk.
 
-For the Heathkit (add text here ).
+For the Heathkit H8/H89, the board is the H8xSPI which includes an NVRAM chip as well,
+used for storing network configuration.
+See http://koyado.com/Heathkit/H8_CP_NET_SPI_Wiznet_Network.html.
 
 
+**Setup**
 Here is the setup requirments for build a release package, see also SETUP.
 
 To setup the build environment:
@@ -35,6 +40,7 @@ To setup the build environment:
 To test this setup, type the command "vcpm dir" and you should get a
 CP/M directory listing of the "a" subdir.
 
+**Building CP/NET**
 And to build the release package, see also BUILD.
 
 To build for the Heathkit H8/H89 with the H8xSPI adapter with WIZ850io and NVRAM:
