@@ -6,7 +6,7 @@ Included is support for CP/M 3.
 
 In the case of RC2014 the added ethernet support board is the MT011 board.  Find it here [MT011](https://github.com/markt4311/MT011).
 If you don't know about the RC2014 you can find info at tindi.com (to buy parts), 
-Google group [RC2014-z80](https://groups.google.com/forum/#!forum/rc2014-z80) and the creator of the [RC2014](www.rc2014.co.uk).
+Google group [RC2014-z80](https://groups.google.com/forum/#!forum/rc2014-z80) and the creator of the RC2014 at www.rc2014.co.uk.
 
 For the Heathkit H8/H89, the board is the H8xSPI which includes an NVRAM chip as well,
 used for storing network configuration.
