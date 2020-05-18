@@ -1,0 +1,11 @@
+; FT245R FIFO-to-USB module
+;
+USBPORT	equ	0d8h	; port on H8/H89 interface
+STSPORT	equ	USBPORT+2
+; Status port bits:
+;	bit 0: Tx space available in FIFO
+;	bit 1: Rx data available in FIFO
+
+USBRXR	equ	00000010b	; Rx data available in FIFO
+USBTXR	equ	00000001b	; Tx space available in FIFO
+

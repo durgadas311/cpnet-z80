@@ -36,6 +36,13 @@ ND3DEP = ndos3dup.com
 LIBS = z80.lib config.lib
 DIRS = $(BLD_SRC) $(BLD_LIB) $(BLD_BIN2) $(BLD_BIN3)
 CPNLDR = dist/cpnetldr.com
+SNDEPS = snios.rel
+SNLINK = snios
+
+ifeq ($(NIC),serial)
+SNDEPS += chrio.rel
+SNLINK = snios,chrio
+endif
 
 ifeq ($(NIC),w5500)
 TARGETS += wizcfg.com wizdbg.com
@@ -104,19 +111,19 @@ $(BLD_SRC)/%.asm: src/$(HBA)/%.asm
 %/wizcfg.com: $(addprefix %/,$(WZCDEPS))
 	$(VCPM) link $(WZCLINK)
 
-%/snios.spr: %/snios.rel %/snios12.rel
-	$(VCPM) link "snios=snios12,snios[os,nr]"
+%/snios.spr: $(addprefix %/,$(SNDEPS)) %/snios12.rel
+	$(VCPM) link "snios=snios12,$(SNLINK)[os,nr]"
 
 %/ndos3wiz.com: %/ndos3wiz.rel %/libwiznt.rel %/libnvram.rel %/libcpnet.rel
 	$(VCPM) link ndos3wiz,libwiznt,libnvram,libcpnet'[oc,nr]'
 
-%/ndos3.com: %/ndos3.rel %/snios.rel %/$(ND3DEP)
-	$(VCPM) link "ndos3.rsx=ndos3,snios[op,nr]"
+%/ndos3.com: %/ndos3.rel $(addprefix %/,$(SNDEPS)) %/$(ND3DEP)
+	$(VCPM) link "ndos3.rsx=ndos3,$(SNLINK)[op,nr]"
 	@cp $*/$(ND3DEP) $*/ndos3.com
 	$(VCPM) gencom ndos3.com ndos3.rsx
 
-%/ntpdate.com: %/ntpdate.rel %/snios.rel
-	$(VCPM) link "ntpdate=ntpdate,snios[oc,nr]"
+%/ntpdate.com: %/ntpdate.rel $(addprefix %/,$(SNDEPS))
+	$(VCPM) link "ntpdate=ntpdate,$(SNLINK)[oc,nr]"
 
 $(BLD_BIN2)/cpnetldr.com: $(CPNLDR)
 	cp -v --update $^ $@

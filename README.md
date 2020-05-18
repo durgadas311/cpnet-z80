@@ -18,22 +18,18 @@ Here is the setup requirments for building a release package, see also SETUP.
 
 To setup the build environment:
 
-1) Install the dos2unix package, or otherwise provide the 'unix2dos'
+1. Install the dos2unix package, or otherwise provide the 'unix2dos'
    command.  Alternatives that add CR to the lines may be used, but
    require customization of the Makefile (CRLFP and CRLF2 variables).
-
-2) Copy tools/vcpm to a directory on your PATH, and edit it to change
+1. Copy tools/vcpm to a directory on your PATH, and edit it to change
    the JAR variable to match the path to tools/VirtualCpm.jar.
-
-3) Copy tools/vcpmrc into ~/.vcpmrc, and edit it if you want to customize
+1. Copy tools/vcpmrc into ~/.vcpmrc, and edit it if you want to customize
    the top level (vcpm_root_dir) directory used for the system drives
    (default: ~/HostFileBdos). If you are running the JAVA CP/NET server
    on this system, you should make certain you use a different top-level
    directory or at least ensure the usage is compatible.
-
-4) Create the VCPM root dir, and the "a" subdir.
-
-5) Copy rmac.com, mac.com, link.com, gencom.com, and hexcom.com from
+1. Create the VCPM root dir, and the "a" subdir.
+1. Copy rmac.com, mac.com, link.com, gencom.com, and hexcom.com from
    a known-good CP/M distribution into the "a" subdir. Filenames must
    be lower-case.
 
@@ -46,22 +42,33 @@ And to build the release package, see also BUILD.
 ### H8/H89
 To build for the Heathkit H8/H89 with the H8xSPI adapter with WIZ850io and NVRAM:
 
-1) 'cd' into the repository top-level directory
-2) type the command "make"
+1. 'cd' into the repository top-level directory
+1. type the command "make"
 
 Results will be placed in a "bld" subdirectory:
-	CP/NET 1.2 files in "bld/w5500/h8xspi/bin/cpnet12"
-	CP/NET 3 files in "bld/w5500/h8xspi/bin/cpnet3".
+* CP/NET 1.2 files in "bld/w5500/h8xspi/bin/cpnet12"
+* CP/NET 3 files in "bld/w5500/h8xspi/bin/cpnet3".
 
 ### RC2014
 To build for the RC2014 with the MT011 adapter with Feathwing WizNET module:
 
-1) 'cd' into the repository top-level directory
-2) type the command "make HBA=mt011"
+1. 'cd' into the repository top-level directory
+1. type the command "make HBA=mt011"
 
 Results will be placed in a "bld" subdirectory:
-	CP/NET 1.2 files in "bld/w5500/mt011/bin/cpnet12"
-	CP/NET 3 files in "bld/w5500/mt011/bin/cpnet3".
+* CP/NET 1.2 files in "bld/w5500/mt011/bin/cpnet12"
+* CP/NET 3 files in "bld/w5500/mt011/bin/cpnet3".
+
+### Virtual CP/NET Device
+A fictitious device for emulators.
+
+* make NIC=vcpnet HBA=null
+
+### FT245R USB (serial)
+FT245R FIFO/parallel to USB chip, https://www.ftdichip.com/Products/ICs/FT245R.htm,
+using an ASCII hex-encoded protocol with CRC.
+
+* make NIC=serial HBA=ft245r
 
 ## Additional Notes
 The destination build directory (default "bld") may be specified using the

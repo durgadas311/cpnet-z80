@@ -2,7 +2,7 @@
 ; a generic, fictitious, hardware emulation
 
 ; I/O port base address
-VCPNET	equ	028h
+VCPN	equ	028h
 
 ; Data port is VCPNET+0 - supports outir/inir
 ; Status/control port is VCPNET+1
