@@ -13,7 +13,7 @@ used for storing network configuration.
 See http://koyado.com/Heathkit/H8_CP_NET_SPI_Wiznet_Network.html.
 
 
-**Setup**
+## Setup
 Here is the setup requirments for build a release package, see also SETUP.
 
 To setup the build environment:
@@ -40,7 +40,7 @@ To setup the build environment:
 To test this setup, type the command "vcpm dir" and you should get a
 CP/M directory listing of the "a" subdir.
 
-**Building CP/NET**
+## Building CP/NET
 And to build the release package, see also BUILD.
 
 To build for the Heathkit H8/H89 with the H8xSPI adapter with WIZ850io and NVRAM:
