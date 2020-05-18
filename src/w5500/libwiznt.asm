@@ -3,10 +3,7 @@
 	public	wizcfg,wizcf0,wizcmd,wizget,wizset,wizclose,setsok,settcp
 	public	gkeep,skeep
 
-H8xSPI	equ	1	; H8xSPI board for H8/H89 systems.
-MT011	equ	2	; MT011_SPI_WIZNET board for RC2014-Z80 systems.
-
-SPIDEV	equ	H8xSPI
+	maclib	config
 
 	; Caller must supply 'nvbuf'
 	extrn	nvbuf
@@ -16,29 +13,6 @@ if (SPIDEV eq H8xSPI)
 endif
 
 	maclib	z80
-
-if (SPIDEV eq MT011)
-; MT011_SPI_WIZNET board for RC2014-Z80 systems.
-spi	equ	5ch	; base port of MT011_SPI_WIZNET SPI interface
-
-spi?wr	equ	spi+0
-spi?rd	equ	spi+1
-spi?ctl	equ	spi+2
-
-WZSCS	equ	1000b	; ctl port for WizNET /CS
-WZRST	equ	0001b	; TODO: implement RESET?
-endif
-
-if (SPIDEV eq H8xSPI)
-; H8xSPI board for H8/H89 systems.
-spi	equ	40h	; base port of H8-WIZx50io SPI interface
-
-spi?wr	equ	spi+0
-spi?rd	equ	spi+0
-spi?ctl	equ	spi+1
-
-WZSCS	equ	0001b	; ctl port for WizNET /CS
-endif
 
 ; WIZNET CTRL bit for writing
 WRITE	equ	00000100b
@@ -93,32 +67,32 @@ DISCON	equ	08h
 wizcmd:
 	push	psw
 	mvi	a,WZSCS
-	out	spi?ctl
+	out	spi$ctl
 	xra	a
-	out	spi?wr
+	out	spi$wr
 	mvi	a,SnCR
-	out	spi?wr
+	out	spi$wr
 	mov	a,d
 	ori	WRITE
-	out	spi?wr
+	out	spi$wr
 	pop	psw
-	out	spi?wr	; start command
+	out	spi$wr	; start command
 	xra	a	;
-	out	spi?ctl
+	out	spi$ctl
 wc0:
 	mvi	a,WZSCS
-	out	spi?ctl
+	out	spi$ctl
 	xra	a
-	out	spi?wr
+	out	spi$wr
 	mvi	a,SnCR
-	out	spi?wr
+	out	spi$wr
 	mov	a,d
-	out	spi?wr
-	in	spi?rd	; prime pump
-	in	spi?rd
+	out	spi$wr
+	in	spi$rd	; prime pump
+	in	spi$rd
 	push	psw
 	xra	a	;
-	out	spi?ctl
+	out	spi$ctl
 	pop	psw
 	ora	a
 	jnz	wc0
@@ -127,36 +101,36 @@ wc0:
 ; E = BSB, D = CTL, HL = data, B = length
 wizget:
 	mvi	a,WZSCS
-	out	spi?ctl
+	out	spi$ctl
 	xra	a	; hi adr always 0
-	out	spi?wr
+	out	spi$wr
 	mov	a,e
-	out	spi?wr
+	out	spi$wr
 	mov	a,d
-	out	spi?wr
-	in	spi?rd	; prime pump
-	mvi	c,spi?rd
+	out	spi$wr
+	in	spi$rd	; prime pump
+	mvi	c,spi$rd
 	inir
 	xra	a	; not SCS
-	out	spi?ctl
+	out	spi$ctl
 	ret
 
 ; HL = data to send, E = offset, D = BSB, B = length
 ; destroys HL, B, C, A
 wizset:
 	mvi	a,WZSCS
-	out	spi?ctl
+	out	spi$ctl
 	xra	a	; hi adr always 0
-	out	spi?wr
+	out	spi$wr
 	mov	a,e
-	out	spi?wr
+	out	spi$wr
 	mov	a,d
 	ori	WRITE
-	out	spi?wr
-	mvi	c,spi?wr
+	out	spi$wr
+	mvi	c,spi$wr
 	outir
 	xra	a	; not SCS
-	out	spi?ctl
+	out	spi$ctl
 	ret
 
 ; Close socket if active (SR <> CLOSED)
