@@ -3,6 +3,7 @@
 SPIDEV	equ	MT011
 
 spi	equ	5ch	; base port of MT011_SPI_WIZNET SPI interface
+			; base port can also be 1ch to match MarkT's s/w
 
 spi$wr	equ	spi+0
 spi$rd	equ	spi+1
