@@ -1,0 +1,14 @@
+; Config details for virtual CP/NET device.
+; a generic, fictitious, hardware emulation
+
+; I/O port base address
+VCPNET	equ	028h
+
+; Data port is VCPNET+0 - supports outir/inir
+; Status/control port is VCPNET+1
+;	output - reset/resync (data ignored). next input on data port
+;		 reads the client ID.
+;	input  - bit 0: data ready
+;		 bit 1: command overrun
+;		 bit 2: response underrun
+;		 bit 3: error
