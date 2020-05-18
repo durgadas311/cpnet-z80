@@ -79,17 +79,18 @@ The following assume that you are running CP/M 2.2 or ZSDOS.
 Here is a submit file helpful for starting cpnet on your CP/M 2.2 system.  Pay attention to the
 notes.
 ```
-	#C>type cpnet.sub
-	#c:ifconfig
-^^^^^^^^^^^^  this is a program that sets up the MT011 board, find it at https://github.com/jayacotton/inettools-z80
-	#b:pip a:=c:ccp.spr
+C>type cpnet.sub
+c:ifconfig
+^^^^^^^^^^^^  this is a program that sets up the MT011 board, find it at 
+	      https://github.com/jayacotton/inettools-z80
+b:pip a:=c:ccp.spr
 ^^^^^^^^^  I assume that the cpnet kit is installed on your c drive.
-	#c:wizcfg 0 0 192.168.0.120 31100 45
+c:wizcfg 0 0 192.168.0.120 31100 45
 ^^^^^^^^^^^^^^this address will need to adjusted for your local server.
-	#c:cpnetldr
-	#c:network k:=c:[0]
+c:cpnetldr
+c:network k:=c:[0]
 ^^^^^^^^^^^^^^ I publish 2 pseudo drives on my local server.
-	#c:network l:=d:[0]
+c:network l:=d:[0]
 ^^^^^^^^^^^^^^  And these drive letters are not going to work for everyone.
 ```
 After running the submit file, you should be configured for CPNET.  You can run cpnetsts
