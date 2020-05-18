@@ -14,7 +14,7 @@ See http://koyado.com/Heathkit/H8_CP_NET_SPI_Wiznet_Network.html.
 
 
 ## Setup
-Here is the setup requirments for build a release package, see also SETUP.
+Here is the setup requirments for building a release package, see also SETUP.
 
 To setup the build environment:
 
@@ -43,6 +43,7 @@ CP/M directory listing of the "a" subdir.
 ## Building CP/NET
 And to build the release package, see also BUILD.
 
+### H8/H89
 To build for the Heathkit H8/H89 with the H8xSPI adapter with WIZ850io and NVRAM:
 
 1) 'cd' into the repository top-level directory
@@ -52,7 +53,7 @@ Results will be placed in a "bld" subdirectory:
 	CP/NET 1.2 files in "bld/w5500/h8xspi/bin/cpnet12"
 	CP/NET 3 files in "bld/w5500/h8xspi/bin/cpnet3".
 
-
+### RC2014
 To build for the RC2014 with the MT011 adapter with Feathwing WizNET module:
 
 1) 'cd' into the repository top-level directory
@@ -62,7 +63,7 @@ Results will be placed in a "bld" subdirectory:
 	CP/NET 1.2 files in "bld/w5500/mt011/bin/cpnet12"
 	CP/NET 3 files in "bld/w5500/mt011/bin/cpnet3".
 
-
+## Additional Notes
 The destination build directory (default "bld") may be specified using the
 'make' variable BUILD. For example:
 
