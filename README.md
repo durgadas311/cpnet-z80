@@ -68,3 +68,60 @@ The destination build directory (default "bld") may be specified using the
 'make' variable BUILD. For example:
 
 	make BUILD=/path/to/build/top [...]
+
+### Running CPNET on RC2014.
+
+First, required hardware.  RC2014 with ROM/RAM board, RomWBW installed, RTC or a CTC to generate
+time keeping interupts, MT011 wiznet board.
+
+The following assume that you are running CP/M 2.2 or ZSDOS.
+
+Here is a submit file helpful for starting cpnet on your CP/M 2.2 system.  Pay attention to the
+notes.
+C>type cpnet.sub
+c:ifconfig
+^^^^^^^^^^^^  this is a program that sets up the MT011 board, find it at https://github.com/jayacotton/inettools-z80
+b:pip a:=c:ccp.spr
+^^^^^^^^^  I assume that the cpnet kit is installed on your c drive.
+c:wizcfg 0 0 192.168.0.120 31100 45
+^^^^^^^^^^^^^^this address will need to adjusted for your local server.
+c:cpnetldr
+c:network k:=c:[0]
+^^^^^^^^^^^^^^ I publish 2 pseudo drives on my local server.
+c:network l:=d:[0]
+^^^^^^^^^^^^^^  And these drive letters are not going to work for everyone.
+
+After running the submit file, you should be configured for CPNET.  You can run cpnetsts
+to check that everything is working.  You will also see activity on your local server
+talking about the connection.
+
+C>cpnetsts
+
+CP/NET 1.2 Status
+=================
+Requester ID = 03H
+Network Status Byte = 13H
+Disk device status:
+  Drive A: = LOCAL
+  Drive B: = LOCAL
+  Drive C: = LOCAL
+  Drive D: = LOCAL
+  Drive E: = LOCAL
+  Drive F: = LOCAL
+  Drive G: = LOCAL
+  Drive H: = LOCAL
+  Drive I: = LOCAL
+  Drive J: = LOCAL
+  Drive K: = Drive C: on Network Server ID = 00H
+  Drive L: = Drive D: on Network Server ID = 00H
+  Drive M: = LOCAL
+  Drive N: = LOCAL
+  Drive O: = LOCAL
+  Drive P: = LOCAL
+Console Device = LOCAL
+List Device = LOCAL
+
+From here you and copy/run/what ever the files on your pseudo drives.  You can also
+copy/install from the pseudo drive.  In addition any file you copy to the pseudo drive
+on your server system will be accessable instantly on your CP/M system.
+
