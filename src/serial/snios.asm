@@ -226,7 +226,7 @@ recvhex:
 	ret
 
 recvdig:
-	call	recvbyt ; destroys C
+	call	recvby	; destroys C
 	rc
 	sui	'0'
 	rc
