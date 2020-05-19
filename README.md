@@ -26,10 +26,12 @@ and includes an NVRAM chip as well,
 used for storing network configuration.
 See [H8_CP_NET_SPI](http://koyado.com/Heathkit/H8_CP_NET_SPI_Wiznet_Network.html).
 
-The file doc/dri-cpnet.pdf contains the original Digital Research CP/NET documentation,
+The file [doc/dri-cpnet.pdf](/doc/dri-cpnet.pdf)
+contains the original Digital Research CP/NET documentation,
 modified to add the CP/M 3 extensions.
 
-The file doc/CPNET-WIZ850io.pdf contains specific instructions for the Heathkit H8/H89
+The file [doc/CPNET-WIZ850io.pdf](/doc/CPNET-WIZ850io.pdf)
+contains specific instructions for the Heathkit H8/H89
 CP/NET environment, but it also contains a lot of general information about how
 CP/NET is being used on a W5500-based TCP/IP network.
 
