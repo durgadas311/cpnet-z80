@@ -1,12 +1,21 @@
 # cpnet-z80
-CPNET-Z80 is a port/implementation of DRI CPNET with drivers for the Wiznet w5500.  This code supports both
-the Heathkit H8/H89 and the RC2014.  
+CPNET-Z80 is a port/implementation of DRI CPNET with drivers for the following
+environments:
+
+NIC | HBA | Description
+----|-----|------------
+w5500 | h8xspi | Heathkit H8/H89 with WIZ850io and NVRAM
+w5500 | mt011 | RC2014 with MT011 and Featherwing W5500
+serial | ft245r | Serial over FT245R USB module
+vcpnet | null | Virtual CP/NET pseudo device
 
 Included is support for CP/M 3.
 
-In the case of RC2014 the added ethernet support board is the MT011 board.  Find it here [MT011](https://github.com/markt4311/MT011).
+In the case of RC2014 the added ethernet support board is the MT011 board.
+Find it here [MT011](https://github.com/markt4311/MT011).
 If you don't know about the RC2014 you can find info at tindi.com (to buy parts), 
-Google group [RC2014-z80](https://groups.google.com/forum/#!forum/rc2014-z80) and the creator of the RC2014 at www.rc2014.co.uk.
+Google group [RC2014-z80](https://groups.google.com/forum/#!forum/rc2014-z80)
+and the creator of the RC2014 at www.rc2014.co.uk.
 
 For the Heathkit H8/H89, the board is the H8xSPI which includes an NVRAM chip as well,
 used for storing network configuration.
@@ -14,7 +23,7 @@ See http://koyado.com/Heathkit/H8_CP_NET_SPI_Wiznet_Network.html.
 
 
 ## Setup
-Here is the setup requirments for building a release package, see also SETUP.
+Here is the setup requirments for building a release package
 
 To setup the build environment:
 
@@ -37,13 +46,13 @@ To test this setup, type the command "vcpm dir" and you should get a
 CP/M directory listing of the "a" subdir.
 
 ## Building CP/NET
-And to build the release package, see also BUILD.
+And to build the release package:
 
 ### H8/H89
 To build for the Heathkit H8/H89 with the H8xSPI adapter with WIZ850io and NVRAM:
 
 1. 'cd' into the repository top-level directory
-1. type the command "make"
+1. type the command "make" (or "make NIC=w550 HBA=h8xspi")
 
 Results will be placed in a "bld" subdirectory:
 * CP/NET 1.2 files in "bld/w5500/h8xspi/bin/cpnet12"
@@ -53,14 +62,14 @@ Results will be placed in a "bld" subdirectory:
 To build for the RC2014 with the MT011 adapter with Feathwing WizNET module:
 
 1. 'cd' into the repository top-level directory
-1. type the command "make HBA=mt011"
+1. type the command "make HBA=mt011" (or make NIC=w550 HBA=mt011")
 
 Results will be placed in a "bld" subdirectory:
 * CP/NET 1.2 files in "bld/w5500/mt011/bin/cpnet12"
 * CP/NET 3 files in "bld/w5500/mt011/bin/cpnet3".
 
 ### Virtual CP/NET Device
-A fictitious device for emulators.
+A fictitious device for emulators. Simple software interface using OUTIR/INIR.
 
 * make NIC=vcpnet HBA=null
 
