@@ -18,7 +18,6 @@ NIC = w5500
 
 BUILD = bld
 
-BLD_TOP = $(BUILD)/$(PLAT)/$(HBA)/$(NIC)
 BLD_TOP = $(BUILD)/$(NIC)/$(HBA)
 
 BLD_SRC = $(BLD_TOP)/src
