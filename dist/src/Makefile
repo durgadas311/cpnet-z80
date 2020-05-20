@@ -19,7 +19,7 @@ export CPMDefault = d:
 LIBS = z80.lib config.lib
 DIRS = $(BLD_SRC) $(BLD_LIB) $(BLD_BIN)
 
-TARGETS = cpnetldr.com ndos.spr
+TARGETS = cpnetldr.com ndos.spr ccp.spr
 
 .SECONDARY:
 
@@ -39,6 +39,9 @@ $(BLD_LIB)/%: ../../src/%
 
 $(BLD_SRC)/%.asm: %.asm
 	$(CRLF2) $^ $@
+
+%/ccp.spr: %/ccp.rel
+	$(VCPM) link "ccp[os,nr]"
 
 %/ndos.spr: %/ndos.rel
 	$(VCPM) link "ndos[os,nr]"
