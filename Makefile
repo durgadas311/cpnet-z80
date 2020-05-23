@@ -62,6 +62,8 @@ CPNET = cpnetsts.com dskreset.com endlist.com local.com \
 	login.com logoff.com mail.com network.com xsubnet.com
 CPN2 = ndos.spr ccp.spr cpnetldr.com $(CPNET)
 CPN3 = $(CPNET)
+XCPN3 = ntpdate.com rsxrm.com rsxls.com
+XCPN2 = netdown.com
 
 # customize for build host platform
 CRLFP = unix2dos
@@ -73,9 +75,9 @@ VCPM = vcpm
 all: $(DIRS) $(addprefix $(BLD_LIB)/,$(LIBS)) \
 	cpnet2 cpnet3
 
-cpnet2: $(addprefix $(BLD_BIN2)/,$(TARGETS) $(CPN2) snios.spr)
+cpnet2: $(addprefix $(BLD_BIN2)/,$(TARGETS) $(CPN2) snios.spr $(XCPN2))
 
-cpnet3: $(addprefix $(BLD_BIN3)/,$(TARGETS) $(CPN3) ndos3.com ntpdate.com rsxrm.com rsxls.com)
+cpnet3: $(addprefix $(BLD_BIN3)/,$(TARGETS) $(CPN3) ndos3.com $(XCPN3))
 
 $(BLD_SRC) $(BLD_LIB) $(BLD_BIN2) $(BLD_BIN3):
 	@mkdir -p $@
