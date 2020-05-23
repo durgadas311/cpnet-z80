@@ -41,6 +41,41 @@ documention in 'doc'.
 To avoid conflicts of CP/NET node IDs on the internet, a registry scheme is
 proposed in [CPNET-registry.md](/CPNET-registry.md).
 
+## Prebuilt packages
+
+Prebuilt packages for the Heathkit H8/H89 are available
+[here](http://sebhc.durgadas.com/mms89/wiz850io/).
+
+Prebuilt packages for other architectures are TBD.
+
+## Running CP/NET3
+
+On CP/M 3, CP/NET is starting by typing the command "ndos3".
+This should result in the message "NDOS3 Started." and return to the command prompt.
+
+With the NDOS3 RSX loaded, the normal CP/NET commands are used to map drives, etc.
+
+CP/NET3 may be shutdown by typing the command "rsxrm ndos3".
+This is currently the only way to cleanly close
+all connections to servers on w5500 systems.
+RESET or power-off will leave connections open,
+pending keepalive timeout on the servers.
+
+## Running CP/NET 1.2
+
+On CP/M 2.2, CP/NET is started by typing the command "cpnetldr".
+This should result in a load map being printed and return to the command prompt.
+
+Once CP/NET is loaded, the normal CP/NET commands are used to map drives, etc.
+
+CP/NET 1.2 cannot be unloaded.
+A RESET (or power cycle) and reboot is required to return to normal CP/M.
+This means that (on w5500 systems) the sockets are not cleanly shutdown.
+On some systems, RESET leaves the sockets initialized and open.
+
+TODO: write a utility to shutdown w5500 CP/NET 1.2, or a generic utilitiy
+to unload CP/NET 1.2 (if possible).
+
 ## Build Setup
 Here is the setup requirments for building a release package
 
