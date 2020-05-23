@@ -291,12 +291,15 @@ recev2:
 NTWKER:
 	ret
 
-;
-NTWKBT:
- 
-;	This procedure is called each time the CCP is
-;	reloaded from disk.
+; Shut down the network - notify serial client (dispatcher)
 NTWKDN:
+	lxix	msgbuf
+	mvix	0,+0	; FMT
+	mvix	0feh,+3	; BDOS Func
+	mvix	0,+4	; Size
+	lxi	b,msgbuf
+	call	sndmsg0	; avoid active check
+NTWKBT: ; This procedure is called each time the CCP is reloaded from disk.
 	xra	a
 	ret
 
