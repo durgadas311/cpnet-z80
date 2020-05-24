@@ -6,7 +6,7 @@
 	public	NTWKIN, NTWKST, CNFTBL, SNDMSG, RCVMSG, NTWKER, NTWKBT, NTWKDN, CFGTBL
 
 	cseg
-;	Slave Configuration Table
+;	Slave Configuration Table - must be first in module
 CFGTBL:
 	ds	1		; network status byte
 	ds	1		; slave processor ID number

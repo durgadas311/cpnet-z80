@@ -39,7 +39,7 @@ INIT	equ	13h
 ESTAB	equ	17h
 
 	cseg
-;	Slave Configuration Table
+;	Slave Configuration Table - must be first in module
 CFGTBL:
 	ds	1		; network status byte
 	ds	1		; slave processor ID number

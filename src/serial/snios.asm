@@ -7,7 +7,7 @@
 	extrn	sendby,check,recvby,recvbt
 	cseg
 
-;	Slave Configuration Table
+;	Slave Configuration Table - must be first in module
 CFGTBL:
 	db	0		; network status byte
 	ds	1		; slave processor ID number
