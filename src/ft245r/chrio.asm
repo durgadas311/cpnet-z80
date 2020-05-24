@@ -41,28 +41,44 @@ check0:
 ; Destroys C
 ; Returns character in A
 recvby:
-	mvi	c,0
+	push	b
+	lxi	b,charTimeout
 recvb0:
 	in	STSPORT
 	ani	USBRXR
 	jnz	recvb1
-	dcr	c
+	dcx	b
+	mov	a,b
+	ora	c
 	jnz	recvb0
+	pop	b
 	stc
-	ret	; CY, plus A not '-'
+	ret	; CY, timeout
 recvb1:
-	in USBPORT
+	in	USBPORT
+	pop	b
 	ret
 
 ; Receive initial message bytes (e.g. "++")
-; May need timeout, but must be long.
 ; Must preserve all regs (exc. A)
 ; May return CY on timeout.
 recvbt:
+	push	b
+	lxi	b,startTimeout
+recvbt0:
 	in	STSPORT
 	ani	USBRXR
-	jz	recvbt
+	jnz	recvbt1
+	dcx	b
+	mov	a,b
+	ora	c
+	jnz	recvbt0
+	pop	b
+	stc
+	ret	; CY, timeout
+recvbt1:
 	in	USBPORT
+	pop	b
 	ret
 
 	end

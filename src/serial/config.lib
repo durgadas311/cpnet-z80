@@ -1,1 +1,3 @@
-; future options: binary (ascii), no-crc
+; timeout values for chrio.asm (status loop counts):
+startTimeout	equ	0000h	; for first char on receive
+charTimeout	equ	0100h	; between adjacent chars of receive

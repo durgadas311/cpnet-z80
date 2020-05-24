@@ -1,0 +1,12 @@
+; Options for DRI SNIOS reference implementation.
+; 
+
+always$retry	equ	0	; match cpnet-0.8/P112 setting
+timeout$retries equ 100		; timeout a max of 100 times
+max$retries equ	10		; send message max of 10 times
+
+ASCII	equ	0
+
+; timeout values for chrio.asm (status loop counts):
+startTimeout	equ	0000h	; for first char on receive
+charTimeout	equ	0200h	; between adjacent chars of receive

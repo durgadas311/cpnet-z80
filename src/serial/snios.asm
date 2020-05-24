@@ -3,7 +3,7 @@
 	maclib	z80
 	maclib	config
 
-	public	NTWKIN, NTWKST, CNFTBL, SNDMSG, RCVMSG, NTWKER, NTWKBT, NTWKDN, CFGTBL
+	public	NTWKIN,NTWKST,CNFTBL,SNDMSG,RCVMSG,NTWKER,NTWKBT,NTWKDN,CFGTBL
 	extrn	sendby,check,recvby,recvbt
 	cseg
 
@@ -32,13 +32,13 @@ CFGTBL:
 
 	ds	2		; list device:
 	ds	1		;	buffer index
-msgbuf:
 	db	0		;	FMT
 	db	0		;	DID
 	db	0ffh		;	SID (CP/NOS must still initialize)
 	db	5		;	FNC
 	ds	1		;	SIZ
 	ds	1		;	MSG(0)	List number
+msgbuf:	; don't disturb LST: message header, above.
 	ds	128		;	MSG(1) ... MSG(128)
 
 hostid:	db	0
@@ -56,7 +56,6 @@ senderr 	equ	00000001b	; unable to send message
 NTWKIN:
 	call	check	; confirm h/w exists...
 	jc	initerr
-	; TODO: how to get slave ID?
 	; Send "BDOS Func 255" message to other end,
 	; Response will tell us our, and their, node ID
 	lxix	msgbuf
@@ -113,7 +112,7 @@ senddig:
 	daa
 	aci	40h
 	daa
-	jmp sendby
+	jmp	sendby
 
 ; IY = message header, HL = crc
 ; Destroys B,C,E,D

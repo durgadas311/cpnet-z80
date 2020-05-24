@@ -42,6 +42,11 @@ ifeq ($(NIC),serial)
 SNDEPS += chrio.rel
 SNLINK = snios,chrio
 endif
+# *sigh*, just like 'serial' but have no .OR., .MATCH., ...
+ifeq ($(NIC),ser-dri)
+SNDEPS += chrio.rel
+SNLINK = snios,chrio
+endif
 
 ifeq ($(NIC),w5500)
 TARGETS += wizcfg.com wizdbg.com
