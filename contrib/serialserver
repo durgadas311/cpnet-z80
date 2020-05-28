@@ -1,0 +1,20 @@
+#!/bin/bash
+# Wrapper script to startup CpnetSerialServer on Linux, possibly MAC
+
+CLASS=CpnetSerialServer
+JAR1=${CLASS}.jar
+JAR2=/usr/share/java/RXTXcomm.jar
+
+if [[ -L ${JAR2} ]]; then
+	JAR2=$(readlink -f ${JAR2})
+fi
+if [[ ! -f ${JAR1} ]]; then
+	echo "Missing: ${JAR1}" >&2
+	exit 1
+fi
+if [[ ! -f ${JAR2} ]]; then
+	echo "Missing: ${JAR2}" >&2
+	exit 1
+fi
+
+java -cp ${JAR1}:${JAR2} ${CLASS} "${@}"
