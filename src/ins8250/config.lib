@@ -1,0 +1,14 @@
+; INS8250 UART, and compatibles (16550, 16C2550, ...)
+;
+SERPORT	equ	0e0h	; "lp" port on H8/H89 interface
+STSPORT	equ	SERPORT+5
+
+; TODO: use hardware handshake?
+SERRXR	equ	00000001b	; Rx data available
+SERTXR	equ	00100000b	; Tx holding reg empty
+SERDLAB	equ	10000000b
+
+; Port settings
+SERBAUD	equ	000ch	; 9600 baud with standard 1.8432 MHz xtal, 16X
+SERLCR	equ	00000011b	; 8 bit, 1 stop, no parity
+SERMCR	equ	00001111b	; set all handshake lines ON
