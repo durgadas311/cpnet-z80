@@ -8,6 +8,7 @@ w5500 | h8xspi | Heathkit H8/H89 with WIZ850io and NVRAM
 w5500 | mt011 | RC2014 with MT011 and Featherwing W5500
 serial | ft245r | Serial over FT245R USB module, simple protocol
 ser-dri | ft245r | Serial over FT245R USB module, DRI protocol
+ser-dri | ins8250 | DRI serial protocol over INS8250-like UART
 vcpnet | null | Virtual CP/NET pseudo device
 
 Included is support for CP/M 3.
