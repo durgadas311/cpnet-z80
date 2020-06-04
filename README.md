@@ -7,6 +7,7 @@ NIC | HBA | Description
 w5500 | h8xspi | Heathkit H8/H89 with WIZ850io and NVRAM
 w5500 | mt011 | RC2014 with MT011 and Featherwing W5500
 serial | ft245r | Serial over FT245R USB module, simple protocol
+serial | rc-siob | Serial support via FTDI cable for SC131
 ser-dri | ft245r | Serial over FT245R USB module, DRI protocol
 ser-dri | ins8250 | DRI serial protocol over INS8250-like UART
 vcpnet | null | Virtual CP/NET pseudo device
@@ -171,6 +172,31 @@ Disk device status:
 Console Device = LOCAL
 List Device = LOCAL
 ```
+## CPNET on SC131 and friends *
+
+The SC131 and for that matter all Z180 solutions that use the onboard ACSI sio ports will run into trouble with the
+missing modem control signals for port b.  They are simply not supplied to the out side world, (sort of), the important
+one is hijacked by the SD driver (RomWBW) and the way the board is layed out.
+
+Good news is it works at 57600, so to run cpnet on your SC131, do the following.
+Install and build as above.  make NIC=serial HBA=rc-siob
+
+Your next test is to configure the B port as follows. b:mode com1: 57600,n,8,1
+
+Then set up the ~/cpnet-z80/contrib/CpnetSerialServer config file. 
+cpnet_tty=/dev/ttyUSB2 57600 
+cpnet_proto=BINARY
+cpnet_cid=01
+cpnet_server03=HostFileBdos
+
+Start the server with ./serialserver conf=config
+then start the CP/M network with the following.
+b:pip a:=c:ccp.spr
+cpnetldr
+network k:=c:[3]
+
+See server documentation for further details.
+
 
 From here you can copy/run/what ever the files on your pseudo drives.  You can also
 copy/install from the pseudo drive.  In addition any file you copy to the pseudo drive
