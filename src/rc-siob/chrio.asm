@@ -21,8 +21,8 @@ sendby:
 	push	de
 	push	bc
 	mov	e,a	; e is the data byte
-	mvi	b,1	; b is the function code
-	mvi	c,1	; c is the unit number
+	; function code is 1 the unit number 1
+	lxi	b,0101h
 	rst	1	; off to RomWBW  8080 syntax for rst 8
 	pop	bc
 	pop	de
@@ -31,13 +31,14 @@ sendby:
 
 check:			; check to see if the device is present....
 ; empty the RomWBW input buffer befor proceeding.
-chklp:	mvi	b,2	; poll the input device
-	mvi	c,1	; it will be unit 1
+chklp:	
+	; poll the input device it will be unit 1
+	lxi	b,0201h
 	rst	1	; off to get it.
 	cpi	0
 	jz	chklp1
-	mvi	b,0	; function 0
-	mvi	c,1	; unit number
+	; function 0  unit number 1
+	lxi	b,0001h
 	rst	1	; go get it
 	jmp	chklp
 chklp1:	stc		; since you can't unplug the sio port its always 
@@ -55,8 +56,9 @@ recvby:							;s 0
 	lxi	d,0
 recvb0:
 	push	de					;s 4
-	mvi	b,2	; poll the input device
-	mvi	c,1	; it will be unit 1
+	; poll the input device
+	; it will be unit 1
+	lxi	b,0201h
 	rst	1	; off to get it.
 	pop	de	; prep DE for down count	;s 3
 	cpi	0	; zero means no bytes
@@ -78,8 +80,8 @@ recvbt:
 	push	bc
 	push	de
 	push	hl
-rcvb1:	mvi	b,0	; function 0
-	mvi	c,1	; unit number
+rcvb1:	lxi	b,0001h
+	; function 0 unit number 1
 	rst	1	; go get it
 	mov	a,e	; copy to a
 	pop	hl
