@@ -1,9 +1,11 @@
 #!/bin/bash
 # Wrapper script to startup CpnetSerialServer on Linux, possibly MAC
+# Note: jSerialComm seems sensitive to versions.
+# Try newer versions at your own risk.
 
 CLASS=CpnetSerialServer
 JAR1=${CLASS}.jar	# location of the server JAR
-JAR2=${HOME}/Downloads/jSerialComm-2.5.3.jar	# location of jSerial
+JAR2=${HOME}/Downloads/jSerialComm-2.6.2.jar	# location of jSerial
 
 if [[ -L ${JAR2} ]]; then
 	JAR2=$(readlink -f ${JAR2})
