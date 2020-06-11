@@ -1,5 +1,5 @@
 # cpnet-z80
-CPNET-Z80 is a port/implementation of DRI CPNET with drivers for the following
+[CPNET-Z80](CPNET-Z80.md) is a port/implementation of DRI CPNET with drivers for the following
 environments:
 
 NIC | HBA | Description
@@ -55,7 +55,7 @@ Prebuilt packages for other architectures are TBD.
 
 ## [Running CP/NET 1.2](CPNET12.md)
 
-## Build Setup
+## How [build](BUILD.md) your own.
 Here is the setup requirments for building a release package
 
 To setup the build environment:
@@ -118,7 +118,7 @@ The destination build directory (default "./bld") may be specified using the
 
 * make BUILD=/path/to/build/top [...]
 
-### Running CPNET on RC2014.
+### [Running CPNET](RUN-RC2014.md) on RC2014.
 
 First, required hardware.  RC2014 with ROM/RAM board, RomWBW installed, RTC or a CTC to generate
 time keeping interupts, MT011 wiznet board.
