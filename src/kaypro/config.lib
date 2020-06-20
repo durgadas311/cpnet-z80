@@ -1,0 +1,18 @@
+; INS8250 UART, and compatibles (16550, 16C2550, ...)
+;
+SERPORT	equ	004h	; "serial data" port on Kaypro
+CMDPORT	equ	SERPORT+2
+BAUDA	equ	000h	; For Serial Data
+BAUDB	equ	008h	; For Serial Printer
+BAUDPRT	equ	BAUDA	; Use Serial Printer Baud
+
+; TODO: use hardware handshake?
+SERRXR	equ	00000001b	; Rx data available
+SERTXR	equ	00000100b	; Tx holding reg empty
+
+; Port settings
+SERBAUD	equ	00eh	; 9600 baud with standard 5.0688 MHz xtal, 16X
+			; 19200 baud is 00fh...
+SIOWR3	equ	11000001b	; Rx: 8 bits, enable
+SIOWR4	equ	01000100b	; 16x, no parity, 1 stop
+SIOWR5	equ	11101010b	; Tx: DTR, RTS, 8 bits, enable
