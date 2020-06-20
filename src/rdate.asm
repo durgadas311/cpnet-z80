@@ -20,7 +20,7 @@ NRECV	equ	67
 vers:	dw	0
 
 gettime: db	0, 0, 2, 105, 0, 0
-gottime: db	1, 2, 0, 105, 4, 0, 0, 0, 0, 0 ; just prediction of what will be received
+gottime: db	1, 2, 0, 105, 0, 0, 0, 0, 0, 0 ; template of what is received
 
 ; assume < 100
 decout:
@@ -249,12 +249,16 @@ start1:
 	lxi	d,gettime
 	mvi	c,NSEND
 	call	BDOS
-	ora	a
-	jnz	error
+	cpi	0ffh	; NDOS does not handle send errors well...
+	jz	error	; not sure if this works...
 	lxi	d,gottime
 	mvi	c,NRECV
 	call	BDOS
-	ora	a
+	cpi	0ffh	; NDOS does not handle recv errors well...
+	jz	error	; not sure if this works...
+	; do a little more checking...
+	lda	gottime+4	; SIZ
+	cpi	4	; should be 5 bytes in length...
 	jnz	error
 	jmp	shwtime
 
