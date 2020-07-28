@@ -10,6 +10,7 @@ NIC | HBA | Description
 [serial](SERIAL.md) | [rc-siob](RC-SIOB.md) | Serial support via FTDI cable for SC131
 [ser-dri](SER-DRI.md) | [ft245r](FT245R.md) | Serial over FT245R USB module, DRI protocol
 [ser-dri](SER-DRI.md) | [ins8250](INS8250.md) | DRI serial protocol over INS8250-like UART
+[ser-dri](SER-DRI.md) | [kaypro](KAYPRO.md) | DRI serial protocol on Kaypro Z80-SIO UART
 [vcpnet](VCPNET.md) | null | Virtual CP/NET pseudo device
 
 For the Heathkit H8/H89, the board is the H8xSPI with the
