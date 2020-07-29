@@ -1,4 +1,4 @@
-; INS8250 UART, and compatibles (16550, 16C2550, ...)
+; Z80-SIO UART and WD1943 BAUD generator.
 ;
 SERPORT	equ	004h	; "serial data" port on Kaypro
 CMDPORT	equ	SERPORT+2
