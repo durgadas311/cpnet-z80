@@ -16,9 +16,29 @@ for BDOS function 0E (select disk) for drive D: would be
 
     ++00021F0E0003204D--
 
+The server should support the following special messages, which
+are not actually sent to a CP/NET server but are processed by
+the serial port proxy.
+
+#### Initialize and get node ID:
+
+    00 00 00 FF 00 00 (request)
+    01 NN 00 FF 00 00 (response, NN=client node ID)
+
+The proxy performs any required initialization and then responds
+after filling in the client node ID.
+
+#### Shutdown:
+
+    00 00 00 FE 00 00 (request)
+    (no response)
+
+The proxy performs any required shutdown actions, such as closing
+any open sockets to CP/NET servers and releasing resources.
+
 ### Building
 
-make NIC=serial HBA=xxx
+    make NIC=serial HBA=xxx
 
 ### Using
 
