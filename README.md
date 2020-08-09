@@ -1,5 +1,5 @@
 # cpnet-z80
-[CPNET-Z80](CPNET-Z80.md) is a port/implementation of DRI CPNET with drivers for the following
+[CPNET-Z80](CPNET-Z80.md) is a port/implementation of DRI CP/NET with drivers for the following
 environments:
 
 NIC | HBA | Description
@@ -36,8 +36,11 @@ proposed in [CPNET-registry.md](/CPNET-registry.md).
 
 ## Prebuilt packages
 
-Prebuilt packages for the Heathkit H8/H89 are available
+Prebuilt packages for the Heathkit H8/H89 W5500 are available
 [here](http://sebhc.durgadas.com/mms89/wiz850io/).
+
+Prebuilt packages for the Kaypro (Serial Data port) are available
+[here](http://sebhc.durgadas.com/kaypro/).
 
 Prebuilt packages for other architectures are TBD.
 
@@ -45,41 +48,13 @@ Prebuilt packages for other architectures are TBD.
 
 ## [Running CP/NET 1.2](CPNET12.md)
 
-## How [build](BUILD.md) your own.
+## How to [build](BUILD.md) your own.
 
-## Building CP/NET
-And to build the release package:
+## How to [develop](DEVEL.md) a new platform.
 
-### H8/H89
-To build for the Heathkit H8/H89 with the H8xSPI adapter with WIZ850io and NVRAM:
+### [Running CP/NET](RUN-RC2014.md) on RC2014.
 
-1. 'cd' into the repository top-level directory
-1. type the command "make" (or "make NIC=w5500 HBA=h8xspi")
-
-Results will be placed in a "bld" subdirectory:
-* CP/NET 1.2 files in "bld/w5500/h8xspi/bin/cpnet12"
-* CP/NET 3 files in "bld/w5500/h8xspi/bin/cpnet3".
-
-### Virtual CP/NET Device
-A fictitious device for emulators. Simple software interface using OUTIR/INIR.
-
-* make NIC=vcpnet HBA=null
-
-### FT245R USB (serial)
-[FT245R](https://www.ftdichip.com/Products/ICs/FT245R.htm) FIFO/parallel to USB chip,
-using an ASCII hex-encoded protocol with CRC.
-
-* make NIC=serial HBA=ft245r
-
-## Additional Notes
-The destination build directory (default "./bld") may be specified using the
-'make' variable BUILD. For example:
-
-* make BUILD=/path/to/build/top [...]
-
-### [Running CPNET](RUN-RC2014.md) on RC2014.
-
-## CPNET on SC131 and friends *
+## CP/NET on SC131 and friends (serial port) *
 
 The SC131 and for that matter all Z180 solutions that use the onboard ACSI sio ports will run into trouble with the
 missing modem control signals for port b.  They are simply not supplied to the out side world, (sort of), the important
