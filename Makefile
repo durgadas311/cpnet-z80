@@ -4,9 +4,13 @@
 #	h8x/h8xspi/w5500
 #	rc2014/mt011/w5500
 #	kaypro/vcpnet/vcpnet
-PLAT = h8x
-HBA = h8xspi
-NIC = w5500
+#PLAT = h8x
+#HBA = h8xspi
+#NIC = w5500
+PLAT = rc2014
+HBA = rc-siob
+#NIC = serial
+NIC = ser-dri
 # Known NICs:
 #	w5500		WizNET W5500 via SPI, various modules
 #	mms77422	Magnolia Microsystems MagNET, ca. 1983, deprecated
@@ -16,7 +20,8 @@ NIC = w5500
 #	h8xspi		Heathkit SPI to WIZ850io and NVRAM
 #	mt011		RC2014 SPI to Featherwing W5500 module
 
-BUILD = bld
+#BUILD = bld
+BUILD = bld-SC126-dri
 
 BLD_TOP = $(BUILD)/$(NIC)/$(HBA)
 

@@ -5,7 +5,8 @@
 
 CLASS=CpnetSerialServer
 JAR1=${CLASS}.jar	# location of the server JAR
-JAR2=${HOME}/Downloads/jSerialComm-2.6.2.jar	# location of jSerial
+#JAR2=${HOME}/Downloads/jSerialComm-2.6.2.jar	# location of jSerial
+JAR2=jSerialComm-2.6.2.jar	# location of jSerial
 
 if [[ -L ${JAR2} ]]; then
 	JAR2=$(readlink -f ${JAR2})

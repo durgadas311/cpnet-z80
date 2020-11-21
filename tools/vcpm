@@ -1,5 +1,5 @@
 #!/bin/bash
 # Customize for path where JAR exists
-JAR=/path/to/cpnet-z80/tools/VirtualCpm.jar
+JAR=/home/david/Documents/GitHub/cpnet-z80/tools/VirtualCpm.jar
 
 java -jar ${JAR} "${@}"
