@@ -9,8 +9,8 @@
 #NIC = w5500
 PLAT = rc2014
 HBA = rc-siob
-#NIC = serial
-NIC = ser-dri
+NIC = serial
+#NIC = ser-dri
 # Known NICs:
 #	w5500		WizNET W5500 via SPI, various modules
 #	mms77422	Magnolia Microsystems MagNET, ca. 1983, deprecated
@@ -21,7 +21,7 @@ NIC = ser-dri
 #	mt011		RC2014 SPI to Featherwing W5500 module
 
 #BUILD = bld
-BUILD = bld-SC126-dri
+BUILD = bld-SC126
 
 BLD_TOP = $(BUILD)/$(NIC)/$(HBA)
 

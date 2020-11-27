@@ -4,17 +4,8 @@ MT011	equ	2	; MT011_SPI_WIZNET board for RC2014-Z80 systems.
 ; Other HBAs
 FT245R	equ	3
 VCPNET	equ	4
-; Options for DRI SNIOS reference implementation.
-; 
-
-always$retry	equ	0	; match cpnet-0.8/P112 setting
-timeout$retries equ 100		; timeout a max of 100 times
-max$retries equ	10		; send message max of 10 times
-
-ASCII	equ	0
-
 ; timeout values for chrio.asm (status loop counts):
 startTimeout	equ	0000h	; for first char on receive
-charTimeout	equ	0200h	; between adjacent chars of receive
+charTimeout	equ	0100h	; between adjacent chars of receive
 ;  RC2014 SIOB port.  This will only work with a few
 ; of the serial boards.  
