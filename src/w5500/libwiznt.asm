@@ -12,7 +12,11 @@ if (SPIDEV eq H8xSPI)
 	extrn	nvget, vcksum
 endif
 
+if (SPIDEV eq z180spi)   
+	maclib	z180
+else
 	maclib	z80
+endif
 
 ; WIZNET CTRL bit for writing
 WRITE	equ	00000100b
@@ -60,6 +64,134 @@ CLOSED	equ	00h
 DISCON	equ	08h
 
 	cseg
+
+
+;------------------------------------------------------------------------------
+if (SPIDEV eq z180spi)   
+
+RTCIO	EQU	0Ch		; RTC LATCH REGISTER ADR
+Z180BASE equ	40h
+Z180CNTR EQU	Z180BASE + 0Ah	; CSI/O CONTROL
+Z180TRDR EQU	Z180BASE + 0Bh	; CSI/O TRANSMIT/RECEIVE
+
+
+;SD_DEVCNT EQU SDCNT		; NUMBER OF PHYSICAL UNITS (SOCKETS)
+OPRREG	EQU	RTCIO		; USES RTC LATCHES FOR OPERATION
+OPRDEF	EQU	00001100b	; QUIESCENT STATE (/CS1 & /CS2 DEASSERTED)
+OPRMSK	EQU	00001100b	; MASK FOR BITS WE OWN IN RTC LATCH PORT
+CS0	EQU	00000100b	; RTC:2 IS SELECT FOR PRIMARY SPI CARD
+CS1	EQU	00001000b	; RTC:3 IS SELECT FOR SECONDARY SPI CARD
+CNTR	EQU	Z180CNTR
+CNTRTE	equ	10h
+CNTRRE	equ	20h
+TRDR	EQU	Z180TRDR
+IOBASE	EQU	OPRREG		; IOBASE
+IOSYSTEM equ	0Ch
+
+
+; reverse or mirror the bits in a byte
+; 76543210 -> 01234567
+;
+; 18 bytes / 70 cycles
+;
+; from http://www.retroprogramming.com/2014/01/fast-z80-bit-reversal.html
+;
+; enter :  a = byte
+;
+; exit  :  a, l = byte reversed
+; uses  : af, l
+
+	
+lmirror:
+	mov	l,a		; a = 76543210
+	rlc
+	rlc			; a = 54321076
+	xra	l
+	ani	0AAh
+	xra	l		; a = 56341270
+	mov	l,a
+	rlc
+	rlc
+	rlc			; a = 41270563
+	rrcr	l		; l = 05634127
+	xra	l
+	ani	66h
+	xra	l		; a = 01234567
+	mov	l,a
+	ret
+ 
+;Lower the SC130 SD card CS using the GPIO address
+;
+;input (H)L = SD CS selector of 0 or 1
+;uses AF
+
+cslower:
+	in0	a,(CNTR)	;check the CSIO is not enabled
+	ani	CNTRTE+CNTRRE
+	jrnz	cslower
+
+	mov	a,l
+	ani	01h		;isolate SD CS 0 and 1 (to prevent bad input).    
+	inr	a		;convert input 0/1 to SD1/2 CS
+	xri	03h		;invert bits to lower correct I/O bit.
+	rlc
+	rlc			;SC130 SD1 CS is on Bit 2 (SC126 SD2 is on Bit 3).
+	out	IOSYSTEM
+	ret
+
+;Raise the SC180 SD card CS using the GPIO address
+;
+;uses AF
+
+csraise:
+	in0	a,(CNTR)	;check the CSIO is not enabled
+	ani	CNTRTE+CNTRRE
+	jrnz	csraise
+
+	mvi	a,0Ch		;SC130 SC1 CS is on Bit 2 and SC126 SC2 CS is on Bit 3, raise both.
+	out	IOSYSTEM
+	ret
+
+
+;Do a write bus cycle to the SD drive, via the CSIO
+;
+;input L = byte to write to SD drive
+	
+writebyte:
+	mov	a,l
+	call	lmirror		; reverse the bits before we busy wait
+writewait:
+	in0	a,(CNTR)
+	tsti	CNTRTE+CNTRRE	; check the CSIO is not enabled
+	jrnz	writewait
+
+	ori	CNTRTE		; set TE bit
+	out0	l,(TRDR)	; load (reversed) byte to transmit
+	out0	a,(CNTR)	; enable transmit
+	ret
+
+;Do a read bus cycle to the SD drive, via the CSIO
+;  
+;output L = byte read from SD drive
+
+readbyte:
+	in0	a,(CNTR)
+	tsti	CNTRTE+CNTRRE	; check the CSIO is not enabled
+	jrnz	readbyte
+
+	ori	CNTRRE		; set RE bit
+	out0	a,(CNTR)	; enable reception
+readwait:
+	in0	a,(CNTR)
+	tsti	CNTRRE		; check the read has completed
+	jrnz	readwait
+
+	in0	a,(TRDR)	; read byte
+	jmp	lmirror		; reverse the byte, leave in L and A
+
+ endif       
+;------------------------------------------------------------------------------
+
 
 ; Send socket command to WIZNET chip, wait for done.
 ; A = command, D = socket BSB

@@ -7,21 +7,32 @@
 #PLAT = h8x
 #HBA = h8xspi
 #NIC = w5500
-PLAT = rc2014
-HBA = rc-siob
-NIC = serial
+#HBA = rc-siob
+#NIC = serial
 #NIC = ser-dri
+PLAT = rc2014
+HBA = z180spi
+NIC = w5500
+
+# SC126
+#PLAT = rc2014
+#HBA = rc-siob
+#NIC = serial
+
 # Known NICs:
 #	w5500		WizNET W5500 via SPI, various modules
 #	mms77422	Magnolia Microsystems MagNET, ca. 1983, deprecated
 #	ft245r		USB via Serial port
 #	vcpnet		Fictitious device for emulations
+
 # Known HBAs:
 #	h8xspi		Heathkit SPI to WIZ850io and NVRAM
 #	mt011		RC2014 SPI to Featherwing W5500 module
+#	z180spi
 
 #BUILD = bld
 BUILD = bld-SC126
+#BUILD = bld-test
 
 BLD_TOP = $(BUILD)/$(NIC)/$(HBA)
 
@@ -37,7 +48,7 @@ export CPMDefault = d:
 
 TARGETS = netstat.com srvstat.com rdate.com tr.com
 ND3DEP = ndos3dup.com
-LIBS = z80.lib config.lib
+LIBS = z80.lib z180.lib config.lib
 DIRS = $(BLD_SRC) $(BLD_LIB) $(BLD_BIN2) $(BLD_BIN3)
 CPNLDR = dist/cpnetldr.com
 SNDEPS = snios.rel
@@ -67,6 +78,9 @@ WZCLINK = wizcfg,libwiznt,libnvram'[oc,nr]'
 CPNLDR = $(BLD_SRC)/cpnldr-w.com
 endif
 
+ifeq ($(HBA),z180spi)
+endif
+
 # Files in dist subdir:
 CPNET = cpnetsts.com dskreset.com endlist.com local.com \
 	login.com logoff.com mail.com network.com xsubnet.com
@@ -84,6 +98,8 @@ VCPM = vcpm
 
 all: $(DIRS) $(addprefix $(BLD_LIB)/,$(LIBS)) \
 	cpnet2 cpnet3
+clean:
+	rm -rf $(BUILD)/$(NIC)/$(HBA)
 
 cpnet2: $(addprefix $(BLD_BIN2)/,$(TARGETS) $(CPN2) snios.spr $(XCPN2))
 

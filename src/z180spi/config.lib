@@ -1,0 +1,12 @@
+; Z180 SPI on SC126 systems.
+
+SPIDEV	equ	z180spi
+;
+spi	equ	0c7h	; base port of H8-WIZx50io SPI interface
+
+spi$wr	equ	spi+0
+spi$rd	equ	spi+0
+spi$ctl	equ	spi+1
+
+WZSCS	equ	0001b	; ctl port for WizNET /CS
+

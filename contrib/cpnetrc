@@ -1,17 +1,20 @@
-; djrm SC126 cpnet-80 config file
-;cpnet_log=./log.txt
-;cpnet_tty=/dev/ttyS0 38400
-cpnet_tty=/dev/ttyUSB2 115200
+# djrm SC126 cpnet-80 config file
+#cpnet_log=./log.txt
+#cpnet_tty=/dev/ttyS0 38400
+cpnet_tty=/dev/ttyUSB1 115200
 cpnet_flow_control=rts/cts
-;cpnet_protocol=dri binary
+#cpnet_protocol=dri binary
 cpnet_protocol=ascii crc
 cpnet_cid=01
-;cpnet_server03=HostFileBdos ~/HostFileBdos
+#cpnet_server03=HostFileBdos ~/HostFileBdos
 cpnet_server00=HostFileBdos /home/david
-;cpnet_debug
+#cpnet_debug=1
 hostfilebdos00_drive_i=/home/david/Documents/GitHub/z88dk/examples/sc126
 hostfilebdos00_drive_h=/home/david/z88dk/examples/sc126
 hostfilebdos00_drive_n=/home/david/beaver/network
 hostfilebdos00_drive_o=/home/david/beaver/hd
 hostfilebdos00_drive_p=/home/david/beaver/ta
 
+#host
+#port
+#root_dir
