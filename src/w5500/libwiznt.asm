@@ -70,7 +70,7 @@ DISCON	equ	08h
 if (SPIDEV eq z180spi)   
 
 RTCIO	EQU	0Ch		; RTC LATCH REGISTER ADR
-Z180BASE equ	40h
+Z180BASE equ	0C0h
 Z180CNTR EQU	Z180BASE + 0Ah	; CSI/O CONTROL
 Z180TRDR EQU	Z180BASE + 0Bh	; CSI/O TRANSMIT/RECEIVE
 
@@ -130,13 +130,14 @@ cslower:
 	ani	CNTRTE+CNTRRE
 	jrnz	cslower
 
-	mov	a,l
-	ani	01h		;isolate SD CS 0 and 1 (to prevent bad input).    
-	inr	a		;convert input 0/1 to SD1/2 CS
-	xri	03h		;invert bits to lower correct I/O bit.
-	rlc
-	rlc			;SC130 SD1 CS is on Bit 2 (SC126 SD2 is on Bit 3).
-	out	IOSYSTEM
+;	mov	a,l
+;	ani	01h		;isolate SD CS 0 and 1 (to prevent bad input).    
+;	inr	a		;convert input 0/1 to SD1/2 CS
+;	xri	03h		;invert bits to lower correct I/O bit.
+;	rlc
+;	rlc			;SC130 SD1 CS is on Bit 2 (SC126 SD2 is on Bit 3).
+	mvi	a,0f7h
+	out0	a,(IOSYSTEM)
 	ret
 
 ;Raise the SC180 SD card CS using the GPIO address
@@ -148,8 +149,8 @@ csraise:
 	ani	CNTRTE+CNTRRE
 	jrnz	csraise
 
-	mvi	a,0Ch		;SC130 SC1 CS is on Bit 2 and SC126 SC2 CS is on Bit 3, raise both.
-	out	IOSYSTEM
+	mvi	a,0ffh		;SC130 SC1 CS is on Bit 2 and SC126 SC2 CS is on Bit 3, raise both.
+	out0	a,(IOSYSTEM)
 	ret
 
 
@@ -158,7 +159,7 @@ csraise:
 ;input L = byte to write to SD drive
 	
 writebyte:
-	mov	a,l
+;	mov	a,l
 	call	lmirror		; reverse the bits before we busy wait
 writewait:
 	in0	a,(CNTR)
@@ -189,6 +190,91 @@ readwait:
 	in0	a,(TRDR)	; read byte
 	jmp	lmirror		; reverse the byte, leave in L and A
 
+if 1
+writeblock:
+    in0 a,(CNTR)
+    tsti 	(CNTRTE+CNTRRE) ;check the CSIO is not enabled
+    jrnz	writeblock
+
+    ori 	CNTRTE          ; set TE bit
+
+    xchg			;ex de,hl                ; pointer in DE
+    lxi 	b,CNTR		;ld bc,CNTR              ; keep iterative word count in B, and C has CNTR IO port address
+    mov		h,a		;ld h,a                  ; H now contains CNTR bits to start transmission
+
+writenextword:
+    ldax 	d 		;ld a,(de)               ; upper byte
+    call 	lmirror         ; reversed bits in A and L
+writewaith:
+    tstio 	CNTRTE         	; test bits in IO port (C)
+    jrnz	writewaith   	; wait for transmit to complete
+
+    out0 	l,(TRDR)	;(TRDR),l        ; write byte to transmit
+    out0 	h,(CNTR)	;(CNTR),h        ; start transmit
+
+    inx 	d		;inc de                  ; ptr++
+    ldax 	d 		;ld a,(de)               ; lower byte
+    call 	lmirror         ; reversed bits in A and L
+writewaitl:
+    tstio 	CNTRTE          ; test bits in IO port (C)
+    jrnz	writewaitl   	; wait for transmit to complete
+
+    out0 	l,(TRDR)	;(TRDR),l        ; write byte to transmit
+    out0 	h,(CNTR)	;(CNTR),h        ; start transmit
+
+    inx		d		;inc de                  ; ptr++
+    djnz 	writenextword  	; length != 0, go again
+    ret
+endif
+
+    ;Read a block of 512 bytes (one sector) from the drive
+    ;and store it in memory at (HL++)
+    ;
+    ;input HL = pointer to block
+    ;uses AF, BC, DE, HL
+
+readblock:
+    in0 	a,(CNTR)
+    tsti 	(CNTRTE+CNTRRE)	;check the CSIO is not enabled
+    jrnz	readblock
+
+    ori 	CNTRRE          ; set RE bit
+    out0 	a,(CNTR)        ; start receiving first byte
+
+    xchg			;ex de,hl                ; pointer in DE
+    lxi		b,CNTR		;ld bc,CNTR              ; keep iterative word count in B, and C has CNTR IO port address
+    mov		h,a		;ld h,a                  ; H now contains CNTR bits to start reception
+
+    jr 		readwaitl       ; get first byte
+
+readagain:
+    out0 	h,(CNTR)        ; start receiving next byte
+
+    call 	lmirror         ; reversed bits in A and L
+    stax	d		;ld (de),a               ; upper byte
+    inx		d		;inc de                  ; ptr++
+
+readwaitl:
+    tstio CNTRRE           	; test bits in IO port (C)
+    jrnz	readwaitl      	; wait for reception to complete
+
+    in0 	a,(TRDR)        ; read byte
+    out0 	h,(CNTR)        ; start reception next byte
+    call 	lmirror         ; reversed bits in A and L
+    stax	d		;ld (de),a               ; lower byte
+    inx		d		;inc de                  ; ptr++
+
+readwaith:
+    tstio CNTRRE           	; test bits in IO port (C)
+    jrnz	readwaith    	; wait for reception to complete
+
+    in0 	a,(TRDR)        ; read byte
+    djnz 	readagain      	; length != 0, go again
+
+    call 	lmirror         ; reversed bits in A and L
+    stax	d		;ld (de),a               ; upper byte
+    ret
+
  endif       
 ;------------------------------------------------------------------------------
 
@@ -198,22 +284,29 @@ readwait:
 ; Destroys A
 wizcmd:
 	push	psw
-	mvi	a,WZSCS
-	out	spi$ctl
+;	mvi	a,WZSCS
+;	out	spi$ctl
+	call	cslower
 	xra	a
 	out	spi$wr
+;	call	writebyte
 	mvi	a,SnCR
 	out	spi$wr
+;	call	writebyte
 	mov	a,d
 	ori	WRITE
 	out	spi$wr
+;	call	writebyte
 	pop	psw
 	out	spi$wr	; start command
-	xra	a	;
-	out	spi$ctl
+;	call	writebyte
+;	xra	a	;
+;	out	spi$ctl
+	call	csraise
 wc0:
-	mvi	a,WZSCS
-	out	spi$ctl
+;	mvi	a,WZSCS
+;	out	spi$ctl
+	call	cslower
 	xra	a
 	out	spi$wr
 	mvi	a,SnCR
@@ -223,8 +316,9 @@ wc0:
 	in	spi$rd	; prime pump
 	in	spi$rd
 	push	psw
-	xra	a	;
-	out	spi$ctl
+;	xra	a	;
+;	out	spi$ctl
+	call	csraise
 	pop	psw
 	ora	a
 	jnz	wc0
@@ -232,8 +326,9 @@ wc0:
 
 ; E = BSB, D = CTL, HL = data, B = length
 wizget:
-	mvi	a,WZSCS
-	out	spi$ctl
+;	mvi	a,WZSCS
+;	out	spi$ctl
+	call	cslower
 	xra	a	; hi adr always 0
 	out	spi$wr
 	mov	a,e
@@ -243,26 +338,48 @@ wizget:
 	in	spi$rd	; prime pump
 	mvi	c,spi$rd
 	inir
-	xra	a	; not SCS
-	out	spi$ctl
+;	xra	a	; not SCS
+;	out	spi$ctl
+	call	csraise
 	ret
 
 ; HL = data to send, E = offset, D = BSB, B = length
 ; destroys HL, B, C, A
+; n.b. used by set MAC in wizcfg
 wizset:
-	mvi	a,WZSCS
-	out	spi$ctl
+	push	b
+	push	hl
+;	mvi	a,WZSCS
+;	out	spi$ctl
+	call	cslower
 	xra	a	; hi adr always 0
-	out	spi$wr
-	mov	a,e
-	out	spi$wr
+;	out	spi$wr
+	call	writebyte ; hi adr
+	mov	a,e	
+;	out	spi$wr
+	call	writebyte ; lo adr
 	mov	a,d
 	ori	WRITE
-	out	spi$wr
-	mvi	c,spi$wr
-	outir
-	xra	a	; not SCS
-	out	spi$ctl
+;	out	spi$wr
+	call	writebyte ; WRITE (4)
+
+	pop	de
+	pop	b	; retrieve count
+;    xchg			;ex de,hl                ; pointer in DE
+
+wizsetloop:	
+    ldax	d
+;    call 	lmirror         ; reversed bits in A and L
+    call 	writebyte
+
+    inx		d		;inc de                  ; ptr++
+    djnz 	wizsetloop  	; length != 0, go again
+
+;	mvi	c,spi$wr
+;	outir
+;	xra	a	; not SCS
+;	out	spi$ctl
+	call	csraise
 	ret
 
 ; Close socket if active (SR <> CLOSED)

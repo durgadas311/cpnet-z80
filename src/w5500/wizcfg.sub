@@ -1,0 +1,6 @@
+i:wizcfg M 00:AA:BB:CC:DE:02
+i:wizcfg G 192.168.178.1
+i:wizcfg I 192.168.178.25
+i:wizcfg S 255.255.255.0
+i:wizcfg N 0
+

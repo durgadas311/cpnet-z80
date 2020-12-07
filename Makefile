@@ -44,6 +44,9 @@ BLD_BIN3 = $(BLD_TOP)/bin/cpnet3
 # For the 'vcpm' (VirtualCpm.jar) emulation
 export CPMDrive_D = $(BLD_SRC)
 export CPMDrive_L = $(BLD_LIB)
+#export CPMDrive_A = $(BUILD)/$(NIC)/$(HBA)/bin/cpnet3
+export CPMDrive_A = 
+
 export CPMDefault = d:
 
 TARGETS = netstat.com srvstat.com rdate.com tr.com
