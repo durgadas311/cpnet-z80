@@ -13,8 +13,16 @@ hostfilebdos00_drive_i=/home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500/z1
 hostfilebdos00_drive_h=/home/david/z88dk/examples/sc126
 hostfilebdos00_drive_n=/home/david/beaver/network
 hostfilebdos00_drive_o=/home/david/beaver/hd
-hostfilebdos00_drive_p=/home/david/beaver/ta
-
-#host
-#port
-#root_dir
+#hostfilebdos00_drive_p=/home/david/beaver/ta
+#
+# CpNetServer settings
+# I7MINT PC IP is 192.168.178.24
+# Wiznet W5500 IP 192.168.178.25
+#
+cpnetserver_host = 192.168.178.24
+cpnetserver_port = 31100
+cpnetserver_temp = P
+cpnetserver_sid = 00
+cpnetserver_max = 16
+cpnetserver_root_dir =/home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500/z180spi/bin/cpnet3
+cpnetserver_debug

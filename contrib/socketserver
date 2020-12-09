@@ -1,0 +1,13 @@
+#!/bin/bash
+# Wrapper script to startup CpnetSocketServer on Linux, possibly MAC
+
+CLASS=CpnetSocketServer
+JAR1=${CLASS}.jar	# location of the server JAR
+
+if [[ ! -f ${JAR1} ]]; then
+	echo "Missing: ${JAR1}" >&2
+	exit 1
+fi
+
+echo java -cp ${JAR1} ${CLASS} "${@}"
+

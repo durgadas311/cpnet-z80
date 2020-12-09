@@ -223,7 +223,7 @@ if (SPIDEV eq H8xSPI)
 	jz	nvsok
 endif
 	; set Sn_MR separate, to avoid writing CR and SR...
-	call	getsokn ;(1)
+	call	getsokn ;
 	mov	d,a
 	push	d
 	call	settcp	; force TCP mode [00,00,0c,>01]
@@ -233,8 +233,8 @@ endif
 	lxi	h,sokregs
 	mvi	e,SnMR
 	mvi	b,soklen
-;  mvi d,08h ;(todo, mask write bit)
-	call	wizget		;[00,00,0c,<...
+;	mvi	d,8	; djrm, clear write bit in control byte
+	call	wizget
 	lxi	h,sokmac
 	lxi	d,nskmac
 	lxi	b,6
