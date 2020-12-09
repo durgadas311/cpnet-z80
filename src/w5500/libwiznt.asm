@@ -2,6 +2,7 @@
 
 	public	wizcfg,wizcf0,wizcmd,wizget,wizset,wizclose,setsok,settcp
 	public	gkeep,skeep
+	public	csraise, cslower, lmirror ; perhaps use these in wizdbg
 
 	maclib	config
 
@@ -190,92 +191,7 @@ readwait:
 	in0	a,(TRDR)	; read byte
 	jmp	lmirror		; reverse the byte, leave in L and A
 
-if 1
-writeblock:
-    in0 a,(CNTR)
-    tsti 	(CNTRTE+CNTRRE) ;check the CSIO is not enabled
-    jrnz	writeblock
-
-    ori 	CNTRTE          ; set TE bit
-
-    xchg			;ex de,hl                ; pointer in DE
-    lxi 	b,CNTR		;ld bc,CNTR              ; keep iterative word count in B, and C has CNTR IO port address
-    mov		h,a		;ld h,a                  ; H now contains CNTR bits to start transmission
-
-writenextword:
-    ldax 	d 		;ld a,(de)               ; upper byte
-    call 	lmirror         ; reversed bits in A and L
-writewaith:
-    tstio 	CNTRTE         	; test bits in IO port (C)
-    jrnz	writewaith   	; wait for transmit to complete
-
-    out0 	l,(TRDR)	;(TRDR),l        ; write byte to transmit
-    out0 	h,(CNTR)	;(CNTR),h        ; start transmit
-
-    inx 	d		;inc de                  ; ptr++
-    ldax 	d 		;ld a,(de)               ; lower byte
-    call 	lmirror         ; reversed bits in A and L
-writewaitl:
-    tstio 	CNTRTE          ; test bits in IO port (C)
-    jrnz	writewaitl   	; wait for transmit to complete
-
-    out0 	l,(TRDR)	;(TRDR),l        ; write byte to transmit
-    out0 	h,(CNTR)	;(CNTR),h        ; start transmit
-
-    inx		d		;inc de                  ; ptr++
-    djnz 	writenextword  	; length != 0, go again
-    ret
-endif
-
-    ;Read a block of 512 bytes (one sector) from the drive
-    ;and store it in memory at (HL++)
-    ;
-    ;input HL = pointer to block
-    ;uses AF, BC, DE, HL
-
-readblock:
-    in0 	a,(CNTR)
-    tsti 	(CNTRTE+CNTRRE)	;check the CSIO is not enabled
-    jrnz	readblock
-
-    ori 	CNTRRE          ; set RE bit
-    out0 	a,(CNTR)        ; start receiving first byte
-
-    xchg			;ex de,hl                ; pointer in DE
-    lxi		b,CNTR		;ld bc,CNTR              ; keep iterative word count in B, and C has CNTR IO port address
-    mov		h,a		;ld h,a                  ; H now contains CNTR bits to start reception
-
-    jr 		readwaitl       ; get first byte
-
-readagain:
-    out0 	h,(CNTR)        ; start receiving next byte
-
-    call 	lmirror         ; reversed bits in A and L
-    stax	d		;ld (de),a               ; upper byte
-    inx		d		;inc de                  ; ptr++
-
-readwaitl:
-    tstio CNTRRE           	; test bits in IO port (C)
-    jrnz	readwaitl      	; wait for reception to complete
-
-    in0 	a,(TRDR)        ; read byte
-    out0 	h,(CNTR)        ; start reception next byte
-    call 	lmirror         ; reversed bits in A and L
-    stax	d		;ld (de),a               ; lower byte
-    inx		d		;inc de                  ; ptr++
-
-readwaith:
-    tstio CNTRRE           	; test bits in IO port (C)
-    jrnz	readwaith    	; wait for reception to complete
-
-    in0 	a,(TRDR)        ; read byte
-    djnz 	readagain      	; length != 0, go again
-
-    call 	lmirror         ; reversed bits in A and L
-    stax	d		;ld (de),a               ; upper byte
-    ret
-
- endif       
+ 
 ;------------------------------------------------------------------------------
 
 
@@ -284,62 +200,68 @@ readwaith:
 ; Destroys A
 wizcmd:
 	push	psw
-;	mvi	a,WZSCS
-;	out	spi$ctl
 	call	cslower
+
 	xra	a
-	out	spi$wr
-;	call	writebyte
+	call	writebyte	; hi addr
+
 	mvi	a,SnCR
-	out	spi$wr
-;	call	writebyte
+	call	writebyte	; lo addr
+
 	mov	a,d
 	ori	WRITE
-	out	spi$wr
-;	call	writebyte
+	call	writebyte	; bsb
+
 	pop	psw
-	out	spi$wr	; start command
-;	call	writebyte
-;	xra	a	;
-;	out	spi$ctl
+	call	writebyte	; start command
 	call	csraise
+
 wc0:
-;	mvi	a,WZSCS
-;	out	spi$ctl
 	call	cslower
+
 	xra	a
-	out	spi$wr
+	call	writebyte	; hi addr
+
 	mvi	a,SnCR
-	out	spi$wr
+	call	writebyte	; lo addr
+
 	mov	a,d
-	out	spi$wr
-	in	spi$rd	; prime pump
-	in	spi$rd
+	call	writebyte	; bsd
+
+	call	readbyte	; data	
+
 	push	psw
-;	xra	a	;
-;	out	spi$ctl
 	call	csraise
 	pop	psw
-	ora	a
+
+	ora	a		; done ?
 	jnz	wc0
 	ret
 
 ; E = BSB, D = CTL, HL = data, B = length
+; used by wizcfg to read back w5500 settings
 wizget:
-;	mvi	a,WZSCS
-;	out	spi$ctl
+	push	b		; save count
+	push	hl		; save address
+
 	call	cslower
-	xra	a	; hi adr always 0
-	out	spi$wr
+
+	xra	a		; hi adr always 0
+	call	writebyte 	; hi adr
+
 	mov	a,e
-	out	spi$wr
+	call	writebyte 	; lo adr
+
 	mov	a,d
-	out	spi$wr
-	in	spi$rd	; prime pump
-	mvi	c,spi$rd
-	inir
-;	xra	a	; not SCS
-;	out	spi$ctl
+	call	writebyte 	; bsd / ctl
+
+	pop	de		; restore address
+	pop	b		; retrieve count
+wizgetloop:	
+ 	call	readbyte 	; data
+	stax	d	
+    	inx	d		; ptr++
+   	djnz 	wizgetloop  	; length != 0, go again
 	call	csraise
 	ret
 
@@ -347,38 +269,23 @@ wizget:
 ; destroys HL, B, C, A
 ; n.b. used by set MAC in wizcfg
 wizset:
-	push	b
-	push	hl
-;	mvi	a,WZSCS
-;	out	spi$ctl
+	push	b		; save count
+	push	hl		; save address
 	call	cslower
-	xra	a	; hi adr always 0
-;	out	spi$wr
-	call	writebyte ; hi adr
+	xra	a		; hi adr always 0
+	call	writebyte 	; hi adr
 	mov	a,e	
-;	out	spi$wr
-	call	writebyte ; lo adr
+	call	writebyte 	; lo adr
 	mov	a,d
 	ori	WRITE
-;	out	spi$wr
 	call	writebyte ; WRITE (4)
-
-	pop	de
-	pop	b	; retrieve count
-;    xchg			;ex de,hl                ; pointer in DE
-
+	pop	de		; restore address
+	pop	b		; retrieve count
 wizsetloop:	
-    ldax	d
-;    call 	lmirror         ; reversed bits in A and L
-    call 	writebyte
-
-    inx		d		;inc de                  ; ptr++
-    djnz 	wizsetloop  	; length != 0, go again
-
-;	mvi	c,spi$wr
-;	outir
-;	xra	a	; not SCS
-;	out	spi$ctl
+    	ldax	d
+    	call 	writebyte
+    	inx	d		; ptr++
+   	djnz 	wizsetloop  	; length != 0, go again
 	call	csraise
 	ret
 

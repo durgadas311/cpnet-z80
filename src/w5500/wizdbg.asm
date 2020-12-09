@@ -4,9 +4,33 @@
 ;	g <bsb> <off> <num>	Get <num> bytes from <bsb> at <off>
 ;	s <bsb> <off> <dat>...	Set bytes to <bsb> at <off>
 
-	maclib	z80
-
 	maclib	config
+
+if (SPIDEV eq z180spi)   
+	maclib	z180
+
+;------------------------------------------------------------------------------
+RTCIO	EQU	0Ch		; RTC LATCH REGISTER ADR
+Z180BASE equ	0C0h
+Z180CNTR EQU	Z180BASE + 0Ah	; CSI/O CONTROL
+Z180TRDR EQU	Z180BASE + 0Bh	; CSI/O TRANSMIT/RECEIVE
+
+;SD_DEVCNT EQU SDCNT		; NUMBER OF PHYSICAL UNITS (SOCKETS)
+OPRREG	EQU	RTCIO		; USES RTC LATCHES FOR OPERATION
+OPRDEF	EQU	00001100b	; QUIESCENT STATE (/CS1 & /CS2 DEASSERTED)
+OPRMSK	EQU	00001100b	; MASK FOR BITS WE OWN IN RTC LATCH PORT
+CS0	EQU	00000100b	; RTC:2 IS SELECT FOR PRIMARY SPI CARD
+CS1	EQU	00001000b	; RTC:3 IS SELECT FOR SECONDARY SPI CARD
+CNTR	EQU	Z180CNTR
+CNTRTE	equ	10h
+CNTRRE	equ	20h
+TRDR	EQU	Z180TRDR
+IOBASE	EQU	OPRREG		; IOBASE
+IOSYSTEM equ	0Ch
+
+else
+	maclib	z80
+endif
 
 WRITE	equ	00000100b
 
@@ -72,7 +96,7 @@ pars1:
 	jnz	help
 	lda	cpnet
 	ora	a
-	jnz	nocpnt
+;	jnz	nocpnt	; commented out to allow writing during program testing
 	mvi	a,'S'
 pars2:
 	sta	com
@@ -188,6 +212,123 @@ nocpnt:
 	lxi	d,nocpn
 	jmp	xitmsg
 
+if (SPIDEV eq z180spi)   
+;------------------------------------------------------------------------------
+lmirror:
+	mov	l,a		; a = 76543210
+	rlc
+	rlc			; a = 54321076
+	xra	l
+	ani	0AAh
+	xra	l		; a = 56341270
+	mov	l,a
+	rlc
+	rlc
+	rlc			; a = 41270563
+	rrcr	l		; l = 05634127
+	xra	l
+	ani	66h
+	xra	l		; a = 01234567
+	mov	l,a
+	ret
+
+cslower:
+	in0	a,(CNTR)	;check the CSIO is not enabled
+	ani	CNTRTE+CNTRRE
+	jrnz	cslower
+	mvi	a,0f7h
+	out0	a,(IOSYSTEM)
+	ret
+
+csraise:
+	in0	a,(CNTR)	;check the CSIO is not enabled
+	ani	CNTRTE+CNTRRE
+	jrnz	csraise
+
+	mvi	a,0ffh		;SC130 SC1 CS is on Bit 2 and SC126 SC2 CS is on Bit 3, raise both.
+	out0	a,(IOSYSTEM)
+	ret
+
+writebyte:
+	call	lmirror		; reverse the bits before we busy wait
+writewait:
+	in0	a,(CNTR)
+	tsti	CNTRTE+CNTRRE	; check the CSIO is not enabled
+	jrnz	writewait
+
+	ori	CNTRTE		; set TE bit
+	out0	l,(TRDR)	; load (reversed) byte to transmit
+	out0	a,(CNTR)	; enable transmit
+	ret
+
+readbyte:
+	in0	a,(CNTR)
+	tsti	CNTRTE+CNTRRE	; check the CSIO is not enabled
+	jrnz	readbyte
+
+	ori	CNTRRE		; set RE bit
+	out0	a,(CNTR)	; enable reception
+readwait:
+	in0	a,(CNTR)
+	tsti	CNTRRE		; check the read has completed
+	jrnz	readwait
+
+	in0	a,(TRDR)	; read byte
+	jmp	lmirror		; reverse the byte, leave in L and A
+
+;------------------------------------------------------------------------------
+; Read (GET) data from chip.
+; 'num', 'bsb', 'off' setup.
+; Returns: 'buf' filled with 'num' bytes.
+wizget:
+	call 	cslower
+	lhld	off
+	mov	a,h
+	call	writebyte	; addr hi
+	lhld	off
+	mov	a,l
+	call	writebyte	; addr lo
+	lda	bsb		; 
+	call	writebyte
+	lded	num
+	mov	b,e
+	lxi	d,buf		; address to save to
+wizgetloop:	
+ 	call	readbyte 	; data
+	stax	d	
+    	inx	d		; ptr++
+   	djnz 	wizgetloop  	; length != 0, go again
+	call	csraise
+	ret
+
+;------------------------------------------------------------------------------
+; Write (SET) data in chip.
+; 'num', 'buf', 'bsb', 'off' setup.
+wizset:
+	call 	cslower
+	lhld	off
+	mov	a,h
+	call	writebyte	; addr hi
+	lhld	off
+	mov	a,l
+	call	writebyte	; addr lo
+	lda	bsb
+	ori	WRITE
+	call	writebyte
+	lded	num		
+	mov	b,e		; data count
+	lxi	d,buf		; data address
+wizsetloop:	
+    	ldax	d
+    	call 	writebyte
+    	inx	d		; ptr++
+   	djnz 	wizsetloop  	; length != 0, go again
+	call	csraise
+	ret
+
+;------------------------------------------------------------------------------
+
+else
 ; Read (GET) data from chip.
 ; 'num', 'bsb', 'off' setup.
 ; Returns: 'buf' filled with 'num' bytes.
@@ -241,6 +382,7 @@ wizset:
 	xra	a	; not SCS
 	out	spi$ctl
 	ret
+endif
 
 chrout:
 	push	h

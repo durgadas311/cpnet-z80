@@ -223,17 +223,18 @@ if (SPIDEV eq H8xSPI)
 	jz	nvsok
 endif
 	; set Sn_MR separate, to avoid writing CR and SR...
-	call	getsokn
+	call	getsokn ;(1)
 	mov	d,a
 	push	d
-	call	settcp	; force TCP mode
+	call	settcp	; force TCP mode [00,00,0c,>01]
 	lda	nskkp
 	call	skeep	; set keep-alive
 	; Get current values, cleanup as needed
 	lxi	h,sokregs
-	mvi	e,SnMR
-	mvi	b,soklen
-	call	wizget
+	mvi	e,SnMR (0)
+	mvi	b,soklen (18(
+;  mvi d,08h ;(todo, mask write bit)
+	call	wizget		;[00,00,0c,<...
 	lxi	h,sokmac
 	lxi	d,nskmac
 	lxi	b,6
@@ -361,6 +362,7 @@ setit:
 	jmp	exit
 
 if (SPIDEV eq H8xSPI)
+error ----------------------
 nvshow:	; show config from NVRAM
 	lxix	nvbuf
 	lxi	h,0
