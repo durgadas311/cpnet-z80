@@ -289,6 +289,82 @@ wizsetloop:
 	call	csraise
 	ret
 
+;------------------------------------------------------------------------------
+else
+; Send socket command to WIZNET chip, wait for done.
+; A = command, D = socket BSB
+; Destroys A
+wizcmd:
+	push	psw
+	mvi	a,WZSCS
+	out	spi$ctl
+	xra	a
+	out	spi$wr
+	mvi	a,SnCR
+	out	spi$wr
+	mov	a,d
+	ori	WRITE
+	out	spi$wr
+	pop	psw
+	out	spi$wr	; start command
+	xra	a	;
+	out	spi$ctl
+wc0:
+	mvi	a,WZSCS
+	out	spi$ctl
+	xra	a
+	out	spi$wr
+	mvi	a,SnCR
+	out	spi$wr
+	mov	a,d
+	out	spi$wr
+	in	spi$rd	; prime pump
+	in	spi$rd
+	push	psw
+	xra	a	;
+	out	spi$ctl
+	pop	psw
+	ora	a
+	jnz	wc0
+	ret
+
+; E = BSB, D = CTL, HL = data, B = length
+wizget:
+	mvi	a,WZSCS
+	out	spi$ctl
+	xra	a	; hi adr always 0
+	out	spi$wr
+	mov	a,e
+	out	spi$wr
+	mov	a,d
+	out	spi$wr
+	in	spi$rd	; prime pump
+	mvi	c,spi$rd
+	inir
+	xra	a	; not SCS
+	out	spi$ctl
+	ret
+
+; HL = data to send, E = offset, D = BSB, B = length
+; destroys HL, B, C, A
+wizset:
+	mvi	a,WZSCS
+	out	spi$ctl
+	xra	a	; hi adr always 0
+	out	spi$wr
+	mov	a,e
+	out	spi$wr
+	mov	a,d
+	ori	WRITE
+	out	spi$wr
+	mvi	c,spi$wr
+	outir
+	xra	a	; not SCS
+	out	spi$ctl
+	ret
+
+endif
+
 ; Close socket if active (SR <> CLOSED)
 ; D = socket BSB
 ; Destroys HL, E, B, C, A
