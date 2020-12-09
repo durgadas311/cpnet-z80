@@ -231,8 +231,8 @@ endif
 	call	skeep	; set keep-alive
 	; Get current values, cleanup as needed
 	lxi	h,sokregs
-	mvi	e,SnMR (0)
-	mvi	b,soklen (18(
+	mvi	e,SnMR
+	mvi	b,soklen
 ;  mvi d,08h ;(todo, mask write bit)
 	call	wizget		;[00,00,0c,<...
 	lxi	h,sokmac
@@ -1372,4 +1372,4 @@ nskkp:	ds	1	; KPALVTR
 
 nvbuf:	ds	512
 
-	end
+;	end
