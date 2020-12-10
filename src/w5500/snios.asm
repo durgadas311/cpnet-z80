@@ -126,26 +126,26 @@ IOSYSTEM equ	0Ch
 ;
 ; enter :  a = byte
 ;
-; exit  :  a, l = byte reversed
-; uses  : af, l
+; exit  :  a, c = byte reversed
+; uses  : af, c
 
 	
-lmirror:
-	mov	l,a		; a = 76543210
+cmirror:
+	mov	c,a		; a = 76543210
 	rlc
 	rlc			; a = 54321076
-	xra	l
+	xra	c
 	ani	0AAh
-	xra	l		; a = 56341270
-	mov	l,a
+	xra	c		; a = 56341270
+	mov	c,a
 	rlc
 	rlc
 	rlc			; a = 41270563
-	rrcr	l		; l = 05634127
-	xra	l
+	rrcr	c		; l = 05634127
+	xra	c
 	ani	66h
-	xra	l		; a = 01234567
-	mov	l,a
+	xra	c		; a = 01234567
+	mov	c,a
 	ret
  
 ;Lower the SC130 SD card CS using the GPIO address
@@ -187,15 +187,14 @@ csraise:
 ;input L = byte to write to SD drive
 	
 writebyte:
-;	mov	a,l
-	call	lmirror		; reverse the bits before we busy wait
+	call	cmirror		; reverse the bits before we busy wait
 writewait:
 	in0	a,(CNTR)
 	tsti	CNTRTE+CNTRRE	; check the CSIO is not enabled
 	jrnz	writewait
 
 	ori	CNTRTE		; set TE bit
-	out0	l,(TRDR)	; load (reversed) byte to transmit
+	out0	c,(TRDR)	; load (reversed) byte to transmit
 	out0	a,(CNTR)	; enable transmit
 	ret
 
@@ -216,60 +215,40 @@ readwait:
 	jrnz	readwait
 
 	in0	a,(TRDR)	; read byte
-	jmp	lmirror		; reverse the byte, leave in L and A
+	jmp	cmirror		; reverse the byte, leave in C and A
 
  
 ;------------------------------------------------------------------------------
 
+; call with offset in e, bsb in d, sets write bit
+; return with byte in a and c
 getwiz1:
-;	mvi	a,WZSCS
-;	out	spi$ctl
 	call	cslower
-;	mvi	c,spi$wr
 	xra	a
-;	outp	a	; hi adr byte always 0
 	call	writebyte	; hi adr byte always 0	
-;	outp	e
 	mov	a,e
 	call	writebyte	; lo
-	res	2,d	; read
-;	outp	d
+	res	2,d		; read
 	mov	a,d
 	call	writebyte	; read
-;if spi$rd <> spi$wr
-;	mvi	c,spi$rd
-;endif
-;	inp	a	; prime MISO		
-;	inp	a
 	call	readbyte	; data
-	push	psw
 	call	csraise
-;	xra	a
-;	out	spi$ctl	; clear SCS
-	pop	psw
+	mov	a,c
 	ret
 
+; call with data in a, offset in e, bsb in d
 putwiz1:
 	push	psw
-;	mvi	a,WZSCS
-;	out	spi$ctl
 	call	cslower
-;	mvi	c,spi$wr
 	xra	a
-;	outp	a	; hi adr byte always 0
 	call	writebyte	; hi adr byte always 0	
-;	outp	e
 	mov	a,e
 	call	writebyte	
 	setb	2,d		; write
-;	outp	d
 	mov	a,d
 	call	writebyte	
 	pop	psw
-;	outp	a	; data
 	call	writebyte	; data		
-;	xra	a
-;	out	spi$ctl	; clear SCS
 	call	csraise
 	ret
 
@@ -278,32 +257,18 @@ putwiz1:
 ; Entry: A=value for IDM_AR1
 ; Return: HL=register pair contents
 getwiz2:
-;	mvi	a,WZSCS
-;	out	spi$ctl
 	call	cslower
-;	mvi	c,spi$wr
 	xra	a
-;	outp	a	; hi adr byte always 0
 	call	writebyte	; hi adr byte always 0	
-;	outp	e
 	mov	a,e
-	call	writebyte	; hi adr byte always 0	
+	call	writebyte	; lo adr byte 
 	res	2,d
-;	outp	d
 	mov	a,d
-	call	writebyte	; hi adr byte always 0	
-;if spi$rd <> spi$wr
-;	mvi	c,spi$rd
-;endif
-;	inp	h	; prime MISO
-;	inp	h	; data
+	call	writebyte	; read
 	call	readbyte
 	mov	h,a
-;	inp	l	; data
 	call	readbyte
 	mov	l,a
-	; A still 00
-;	out	spi$ctl	; clear SCS
 	call	csraise
 	ret
 
@@ -312,37 +277,18 @@ getwiz2:
 ; Entry: A=value for IDM_AR1
 ;        HL=register pair contents
 putwiz2:
-	push	hl
-;	mvi	a,WZSCS
-;	out	spi$ctl
 	call	cslower
-
-;	mvi	c,spi$wr
 	xra	a
-;	outp	a	; hi adr byte always 0
 	call	writebyte	; hi adr byte always 0	
-
-;	outp	e
 	mov	a,e
-	call	writebyte	
-
+	call	writebyte	; lo adr
 	setb	2,d
 	mov	a,d
-;	outp	d
-	mov	a,d
-	call	writebyte
-	
+	call	writebyte	; write	
 	mov	a,h
-;	outp	h	; data to write
-	call	writebyte	; data to write	
-
-	pop	hl
-;	outp	l
+	call	writebyte	; data h to write	
 	mov	a,l
-	call	writebyte	
-
-	; A still 00
-;	out	spi$ctl	; clear SCS
+	call	writebyte	; data l
 	call	csraise
 	ret
 
@@ -352,24 +298,15 @@ putwiz2:
 wizcmd:	mov	b,a
 	mvi	e,sn$cr
 	setb	2,d
-;	mvi	a,WZSCS
-;	out	spi$ctl
 	call	cslower
-;	mvi	c,spi$wr
 	xra	a
-;	outp	a	; hi adr byte always 0
 	call	writebyte	; hi adr byte always 0
 	mov	a,e	
-;	outp	e
-	call	writebyte	
-;	outp	d
+	call	writebyte	; lo adr (sn$cr, 1)
 	mov	a,d
-	call	writebyte	
-;	outp	b	; command
+	call	writebyte	; write	
 	mov	a,b
 	call	writebyte	; command	
-	; A still 00
-;	out	spi$ctl	; clear SCS
 	call	csraise
 wc0:	call	getwiz1		; lo addr in e (sn$cr)
 	ora	a
@@ -395,114 +332,59 @@ cpsetup:
 ;	ret
 
 ; HL=socket relative pointer (TX_WR)
-; DE=length
-; Returns: HL=msgptr, C=spi$wr
-
-; Write (SET) data in chip.
-; 'num', 'buf', 'bsb', 'off' setup.
+; DE=length, 
+; HL=msgptr, addr of destination in chip
+; txbuf0
 cpyout:
-	mvi	b,txbuf0
+	mvi	b,txbuf0	; B data
 	call	cslower
-;	call	cpsetup
-	lhld	msgptr
-	push	hl
 	mov	a,h
 	call	writebyte	; addr hi
-;	lhld	off
-	pop	hl
 	mov	a,l
 	call	writebyte	; addr lo
-;	lda	bsb
-	ori	WRITE
+	lda	cursok
+	ora	b	
 	call	writebyte	; bsb
-;	lded	num		
 
 	mov	b,e		; data count
-	lxi	d,txbuf0	; data address
-cpyoutloop:	
-    	ldax	d
+	lhld	msgptr		; HL msgptr
+	xchg			; into DE
+
+co0:   	ldax	d
     	call 	writebyte
     	inx	d		; ptr++
-   	djnz 	cpyoutloop  	; length != 0, go again
-
+   	djnz 	co0  		; length != 0, go again
+co1:	shld	msgptr
 	call	csraise
 	ret
-
-
-;	mov	b,e	; fraction of page
-;	mov	a,e
-;	ora	a
-;	jrz	co0	; exactly 256
-;	outir		; do partial page
-;	; B is now 0 (256 bytes)
-;	mov	a,d
-;	ora	a
-;	jrz	co1
-;co0:	outir	; 256 (more) bytes to xfer
-;co1:	shld	msgptr
-
-
-
-;	xra	a
-;	out	spi$ctl	; clear SCS
 
 ; HL=socket relative pointer (RX_RD)
 ; DE=length
 ; Destroys IDM_AR0, IDM_AR1
-
-; Read (GET) data from chip.
-; 'num', 'bsb', 'off' setup.
-; Returns: 'buf' filled with 'num' bytes.
 cpyin:
 	mvi	b,rxbuf0
 	call 	cslower
-;	lhld	off
-	push	hl
+	lhld	msgptr		; HL msgptr
 	mov	a,h
 	call	writebyte	; addr hi
-;	lhld	off
-	pop	hl
 	mov	a,l
 	call	writebyte	; addr lo
 	lda	cursok
-	ora	b
-;	lda	bsb		; 
+	ora	b	
 	call	writebyte	; bsb
-;	lded	num
+
 	mov	b,e
-	lxi	d,rxbuf0	; address to save to
-cpyinloop:	
- 	call	readbyte 	; data
+	lhld	msgptr		; HL msgptr
+	xchg			; into DE
+
+ci0:	call	readbyte 	; data
 	stax	d	
     	inx	d		; ptr++
-   	djnz 	cpyinloop  	; length != 0, go again
+   	djnz 	ci0  		; length != 0, go again
+ci1:	shld	msgptr
 	call	csraise
 	ret
 
-
-
-;cpyin:
-;	mvi	b,rxbuf0
-;	call	cpsetup	;
-;if spi$rd <> spi$wr
-;	mvi	c,spi$rd
-;endif
-;	inp	a	; prime MISO
-;	mov	b,e	; fraction of page
-;	mov	a,e
-;	ora	a
-;	jrz	ci0	; exactly 256
-;	inir		; do partial page
-;	; B is now 0 (256 bytes)
-;	mov	a,d
-;	ora	a
-;	jrz	ci1
-;ci0:	inir	; 256 (more) bytes to xfer
-;ci1:	shld	msgptr
-;	xra	a
-;	out	spi$ctl	; clear SCS
-;	call	csraise
-;	ret
 
 ;------------------------------------------------------------------------------
 else
@@ -848,8 +730,8 @@ CNFTBL:
 
 ;	Send Message on Network
 SNDMSG:			; BC = message addr
-	sbcd	msgptr
-	lixd	msgptr
+	sbcd	msgptr	; store BC addr into msgptr
+	lixd	msgptr	; put message pointer into index register
 	ldx	b,+1	; SID - destination
 	call	getsrv
 	jrc	serr
@@ -863,24 +745,28 @@ SNDMSG:			; BC = message addr
 	aci	0
 	mov	h,a	; HL=msg length
 	shld	msglen
-	mvi	e,sn$txwr
-	call	getwiz2
-	shld	curptr
-	lhld	msglen
-	lbcd	curptr
-	dad	b
-	mvi	e,sn$txwr
-	call	putwiz2
+	mvi	e,sn$txwr ; 0x24, Socketn tx write pointer
+	call	getwiz2	; into hl
+
+	shld	curptr	; store hl in curptr
+	lhld	msglen	; load hl with msglen
+	lbcd	curptr	; load bc with curptr
+	dad	b	; add hl+bc to hl 
+	mvi	e,sn$txwr  ; 
+	call	putwiz2 ; update Socketn tx write pointer
+
 	; send data
 	lhld	msglen
-	xchg
-	lhld	curptr
-	call	cpyout
+	xchg		; length into DE
+	lhld	curptr	; chip address into HL
+	call	cpyout	; msglen in DE, curptr in HL, socket in A
+
 	lda	cursok
 	ori	sock0
 	mov	d,a
-	mvi	a,SEND
+	mvi	a,SEND  ; send the message
 	call	wizcmd
+
 	; ignore Sn_SR?
 	mvi	c,00011010b	; SEND_OK, DISCON, or TIMEOUT bit
 	call	wizist

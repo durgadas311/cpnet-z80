@@ -214,22 +214,22 @@ nocpnt:
 
 if (SPIDEV eq z180spi)   
 ;------------------------------------------------------------------------------
-lmirror:
-	mov	l,a		; a = 76543210
+cmirror:
+	mov	c,a		; a = 76543210
 	rlc
 	rlc			; a = 54321076
-	xra	l
+	xra	c
 	ani	0AAh
-	xra	l		; a = 56341270
-	mov	l,a
+	xra	c		; a = 56341270
+	mov	c,a
 	rlc
 	rlc
 	rlc			; a = 41270563
-	rrcr	l		; l = 05634127
-	xra	l
+	rrcr	c		; l = 05634127
+	xra	c
 	ani	66h
-	xra	l		; a = 01234567
-	mov	l,a
+	xra	c		; a = 01234567
+	mov	c,a
 	ret
 
 cslower:
@@ -250,14 +250,14 @@ csraise:
 	ret
 
 writebyte:
-	call	lmirror		; reverse the bits before we busy wait
+	call	cmirror		; reverse the bits before we busy wait
 writewait:
 	in0	a,(CNTR)
 	tsti	CNTRTE+CNTRRE	; check the CSIO is not enabled
 	jrnz	writewait
 
 	ori	CNTRTE		; set TE bit
-	out0	l,(TRDR)	; load (reversed) byte to transmit
+	out0	c,(TRDR)	; load (reversed) byte to transmit
 	out0	a,(CNTR)	; enable transmit
 	ret
 
@@ -274,7 +274,7 @@ readwait:
 	jrnz	readwait
 
 	in0	a,(TRDR)	; read byte
-	jmp	lmirror		; reverse the byte, leave in L and A
+	jmp	cmirror		; reverse the byte, leave in C and A
 
 ;------------------------------------------------------------------------------
 ; Read (GET) data from chip.
