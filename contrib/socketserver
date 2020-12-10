@@ -9,5 +9,5 @@ if [[ ! -f ${JAR1} ]]; then
 	exit 1
 fi
 
-echo java -cp ${JAR1} ${CLASS} "${@}"
+java -cp ${JAR1} ${CLASS} "${@}"
 

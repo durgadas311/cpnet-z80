@@ -225,23 +225,23 @@ getwiz1:
 ;	mvi	a,WZSCS
 ;	out	spi$ctl
 	call	cslower
-	mvi	c,spi$wr
+;	mvi	c,spi$wr
 	xra	a
 ;	outp	a	; hi adr byte always 0
-	call	writebyte	
+	call	writebyte	; hi adr byte always 0	
 ;	outp	e
 	mov	a,e
-	call	writebyte
+	call	writebyte	; lo
 	res	2,d	; read
 ;	outp	d
-	mov	d,a
-	call	writebyte
-if spi$rd <> spi$wr
+	mov	a,d
+	call	writebyte	; read
+;if spi$rd <> spi$wr
 ;	mvi	c,spi$rd
-endif
+;endif
 ;	inp	a	; prime MISO		
 ;	inp	a
-	call	readbyte
+	call	readbyte	; data
 	push	psw
 	call	csraise
 ;	xra	a
@@ -254,7 +254,7 @@ putwiz1:
 ;	mvi	a,WZSCS
 ;	out	spi$ctl
 	call	cslower
-	mvi	c,spi$wr
+;	mvi	c,spi$wr
 	xra	a
 ;	outp	a	; hi adr byte always 0
 	call	writebyte	; hi adr byte always 0	
@@ -281,14 +281,16 @@ getwiz2:
 ;	mvi	a,WZSCS
 ;	out	spi$ctl
 	call	cslower
-	mvi	c,spi$wr
+;	mvi	c,spi$wr
 	xra	a
 ;	outp	a	; hi adr byte always 0
 	call	writebyte	; hi adr byte always 0	
 ;	outp	e
+	mov	a,e
 	call	writebyte	; hi adr byte always 0	
 	res	2,d
 ;	outp	d
+	mov	a,d
 	call	writebyte	; hi adr byte always 0	
 ;if spi$rd <> spi$wr
 ;	mvi	c,spi$rd
@@ -310,28 +312,35 @@ getwiz2:
 ; Entry: A=value for IDM_AR1
 ;        HL=register pair contents
 putwiz2:
+	push	hl
 ;	mvi	a,WZSCS
 ;	out	spi$ctl
 	call	cslower
-	mvi	c,spi$wr
+
+;	mvi	c,spi$wr
 	xra	a
 ;	outp	a	; hi adr byte always 0
 	call	writebyte	; hi adr byte always 0	
+
 ;	outp	e
 	mov	a,e
 	call	writebyte	
+
 	setb	2,d
 	mov	a,d
-	call	writebyte	
 ;	outp	d
 	mov	a,d
-	call	writebyte	
+	call	writebyte
+	
 	mov	a,h
 ;	outp	h	; data to write
 	call	writebyte	; data to write	
+
+	pop	hl
 ;	outp	l
 	mov	a,l
 	call	writebyte	
+
 	; A still 00
 ;	out	spi$ctl	; clear SCS
 	call	csraise
@@ -362,7 +371,7 @@ wizcmd:	mov	b,a
 	; A still 00
 ;	out	spi$ctl	; clear SCS
 	call	csraise
-wc0:	call	getwiz1
+wc0:	call	getwiz1		; lo addr in e (sn$cr)
 	ora	a
 	jrnz	wc0
 	mvi	e,sn$sr
@@ -395,7 +404,7 @@ cpyout:
 	mvi	b,txbuf0
 	call	cslower
 ;	call	cpsetup
-
+	lhld	msgptr
 	push	hl
 	mov	a,h
 	call	writebyte	; addr hi
