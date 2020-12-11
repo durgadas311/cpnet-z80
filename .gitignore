@@ -1,13 +1,6 @@
-bld/
 bld-SC126/
-bld-test/
-dist/src/*.com
-dist/src/*.sym
-dist/src/*.prn
-dist/src/*.rel
-dist/src/*.hex
+dist/
 tools/
-_src/
 doc/
 dist/
 

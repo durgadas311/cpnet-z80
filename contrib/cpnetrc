@@ -1,7 +1,7 @@
 # djrm SC126 cpnet-80 config file
 #cpnet_log=./log.txt
 #cpnet_tty=/dev/ttyS0 38400
-cpnet_tty=/dev/ttyUSB1 115200
+cpnet_tty=/dev/ttyUSB0 115200
 cpnet_flow_control=rts/cts
 #cpnet_protocol=dri binary
 cpnet_protocol=ascii crc
@@ -17,12 +17,26 @@ hostfilebdos00_drive_o=/home/david/beaver/hd
 #
 # CpNetServer settings
 # I7MINT PC IP is 192.168.178.24
+# Laptop PC IP is 192.168.178.23
 # Wiznet W5500 IP 192.168.178.25
 #
 cpnetserver_host = 192.168.178.24
 cpnetserver_port = 31100
 cpnetserver_temp = P
+#Desktop sid = 00
+#Laptop sid = 02
 cpnetserver_sid = 00
 cpnetserver_max = 16
-cpnetserver_root_dir =/home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500/z180spi/bin/cpnet3
-cpnetserver_debug
+#cpnetserver_debug
+# Windows directory example c:/data
+cpnetserver_root_dir =~/HostFileBdos
+cpnetserver_drive_h=/home/david/z88dk/examples/sc126
+cpnetserver_drive_i=/home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500/z180spi/bin/cpnet3
+cpnetserver_drive_j=/home/david/RomWBW-dev/Binary
+cpnetserver_drive_n=/home/david/beaver/network
+cpnetserver_drive_o=/home/david/beaver/hd
+# Up to 16 printers, 0-f
+cpnetserver_lst0 = Diablo630Stream file=~/HostFileBdos/lst00.0.ps
+#cpnetserver_lst5 = Diablo630Stream file=lst00.5.ps
+diablo630_nogui = true
+diablo630_jobend = save
