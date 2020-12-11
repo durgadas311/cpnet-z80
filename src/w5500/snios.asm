@@ -354,7 +354,8 @@ co0:   	ldax	d
     	call 	writebyte
     	inx	d		; ptr++
    	djnz 	co0  		; length != 0, go again
-co1:	shld	msgptr
+co1:	xchg
+	shld	msgptr
 	call	csraise
 	ret
 
@@ -364,7 +365,6 @@ co1:	shld	msgptr
 cpyin:
 	mvi	b,rxbuf0
 	call 	cslower
-	lhld	msgptr		; HL msgptr
 	mov	a,h
 	call	writebyte	; addr hi
 	mov	a,l
@@ -381,7 +381,8 @@ ci0:	call	readbyte 	; data
 	stax	d	
     	inx	d		; ptr++
    	djnz 	ci0  		; length != 0, go again
-ci1:	shld	msgptr
+ci1:	xchg
+	shld	msgptr
 	call	csraise
 	ret
 
@@ -845,7 +846,7 @@ rm0:	; D must be socket base...
 	jrz	rm0
 	shld	msglen		; not CP/NET msg len
 	mvi	e,sn$rxrd	; pointer
-	call	getwiz2
+	call	getwiz2	; get rxrd addr
 	shld	curptr
 	lbcd	msglen	; BC=Sn_RX_RSR
 	lhld	totlen
@@ -856,11 +857,11 @@ rm0:	; D must be socket base...
 	lhld	msglen	; BC=Sn_RX_RD, HL=Sn_RX_RSR
 	dad	b	; HL=nxt RD
 	mvi	e,sn$rxrd
-	call	putwiz2
+	call	putwiz2	; write addr to rxrd
 	; DE destroyed...
 	lded	msglen
 	lhld	curptr
-	call	cpyin
+	call	cpyin	; get payload
 	lda	cursok
 	ori	sock0
 	mov	d,a
