@@ -11,8 +11,8 @@
 #NIC = serial
 #NIC = ser-dri
 PLAT = rc2014
-HBA = z180spi
-NIC = w5500
+HBA = z180csio
+NIC = w5500c
 
 # SC126
 #PLAT = rc2014
@@ -24,11 +24,12 @@ NIC = w5500
 #	mms77422	Magnolia Microsystems MagNET, ca. 1983, deprecated
 #	ft245r		USB via Serial port
 #	vcpnet		Fictitious device for emulations
+#	w5500s		WizNET W5500 via z180 CSIO, SC126
 
 # Known HBAs:
 #	h8xspi		Heathkit SPI to WIZ850io and NVRAM
 #	mt011		RC2014 SPI to Featherwing W5500 module
-#	z180spi
+#	z180csio	SC126 SPI to W5500 module
 
 #BUILD = bld
 BUILD = bld-SC126
@@ -73,15 +74,20 @@ WZCDEPS = wizcfg.rel libwiznt.rel
 WZCLINK = wizcfg,libwiznt'[oc,nr]'
 endif
 
+ifeq ($(NIC),w5500c)
+# some tools still need z180lib so cant use next line
+#LIBS = z180.lib config.lib
+TARGETS += wizcfg.com wizdbg.com
+WZCDEPS = wizcfg.rel libwiznt.rel
+WZCLINK = wizcfg,libwiznt'[oc,nr]'
+endif
+
 ifeq ($(HBA),h8xspi)
 TARGETS += nvram.com
 ND3DEP = ndos3wiz.com
 WZCDEPS += libnvram.rel
 WZCLINK = wizcfg,libwiznt,libnvram'[oc,nr]'
 CPNLDR = $(BLD_SRC)/cpnldr-w.com
-endif
-
-ifeq ($(HBA),z180spi)
 endif
 
 # Files in dist subdir:

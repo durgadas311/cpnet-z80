@@ -4,7 +4,7 @@
 ;	g <bsb> <off> <num>	Get <num> bytes from <bsb> at <off>
 ;	s <bsb> <off> <dat>...	Set bytes to <bsb> at <off>
 
-	maclib	z80
+	maclib	z180
 
 	maclib	config
 
@@ -72,7 +72,7 @@ pars1:
 	jnz	help
 	lda	cpnet
 	ora	a
-	jnz	nocpnt
+;	jnz	nocpnt	; djrm, comment out to allow writing during program testing
 	mvi	a,'S'
 pars2:
 	sta	com
@@ -188,59 +188,121 @@ nocpnt:
 	lxi	d,nocpn
 	jmp	xitmsg
 
+;------------------------------------------------------------------------------
+cmirror:
+	mov	c,a		; a = 76543210
+	rlc
+	rlc			; a = 54321076
+	xra	c
+	ani	0AAh
+	xra	c		; a = 56341270
+	mov	c,a
+	rlc
+	rlc
+	rlc			; a = 41270563
+	rrcr	c		; l = 05634127
+	xra	c
+	ani	66h
+	xra	c		; a = 01234567
+	mov	c,a
+	ret
+
+cslower:
+	in0	a,(CNTR)	;check the CSIO is not enabled
+	ani	CNTRTE+CNTRRE
+	jrnz	cslower
+	mvi	a,0f7h
+	out0	a,(IOSYSTEM)
+	ret
+
+csraise:
+	in0	a,(CNTR)	;check the CSIO is not enabled
+	ani	CNTRTE+CNTRRE
+	jrnz	csraise
+
+	mvi	a,0ffh		;SC130 SC1 CS is on Bit 2 and SC126 SC2 CS is on Bit 3, raise both.
+	out0	a,(IOSYSTEM)
+	ret
+
+writebyte:
+	call	cmirror		; reverse the bits before we busy wait
+writewait:
+	in0	a,(CNTR)
+	tsti	CNTRTE+CNTRRE	; check the CSIO is not enabled
+	jrnz	writewait
+
+	ori	CNTRTE		; set TE bit
+	out0	c,(TRDR)	; load (reversed) byte to transmit
+	out0	a,(CNTR)	; enable transmit
+	ret
+
+readbyte:
+	in0	a,(CNTR)
+	tsti	CNTRTE+CNTRRE	; check the CSIO is not enabled
+	jrnz	readbyte
+
+	ori	CNTRRE		; set RE bit
+	out0	a,(CNTR)	; enable reception
+readwait:
+	in0	a,(CNTR)
+	tsti	CNTRRE		; check the read has completed
+	jrnz	readwait
+
+	in0	a,(TRDR)	; read byte
+	jmp	cmirror		; reverse the byte, leave in C and A
+
+;------------------------------------------------------------------------------
 ; Read (GET) data from chip.
 ; 'num', 'bsb', 'off' setup.
 ; Returns: 'buf' filled with 'num' bytes.
 wizget:
-	mvi	a,WZSCS
-	out	spi$ctl
+	call 	cslower
 	lhld	off
 	mov	a,h
-	out	spi$wr
+	call	writebyte	; addr hi
+	lhld	off
 	mov	a,l
-	out	spi$wr
-	lda	bsb
-	out	spi$wr
-	in	spi$rd	; prime pump
-	mvi	c,spi$rd
-	lxi	h,buf
+	call	writebyte	; addr lo
+	lda	bsb		; 
+	call	writebyte
 	lded	num
 	mov	b,e
-	mov	a,e
-	ora	a
-	jrz	wg0
-	inir	; do partial page
-	mov	a,d
-	ora	a
-	jrz	wg1
-wg0:	inir
-	dcr	d
-	jrnz	wg0
-wg1:	xra	a	; not SCS
-	out	spi$ctl
+	lxi	d,buf		; address to save to
+wizgetloop:	
+ 	call	readbyte 	; data
+	stax	d	
+    	inx	d		; ptr++
+   	djnz 	wizgetloop  	; length != 0, go again
+	call	csraise
 	ret
 
+;------------------------------------------------------------------------------
 ; Write (SET) data in chip.
 ; 'num', 'buf', 'bsb', 'off' setup.
 wizset:
-	mvi	a,WZSCS
-	out	spi$ctl
+	call 	cslower
 	lhld	off
 	mov	a,h
-	out	spi$wr
+	call	writebyte	; addr hi
+	lhld	off
 	mov	a,l
-	out	spi$wr
+	call	writebyte	; addr lo
 	lda	bsb
 	ori	WRITE
-	out	spi$wr
-	lda	num
-	mov	b,a
-	mvi	c,spi$wr
-	lxi	h,buf
-	outir
-	xra	a	; not SCS
-	out	spi$ctl
+	call	writebyte
+	lded	num		
+	mov	b,e		; data count
+	lxi	d,buf		; data address
+wizsetloop:	
+    	ldax	d
+    	call 	writebyte
+    	inx	d		; ptr++
+   	djnz 	wizsetloop  	; length != 0, go again
+	call	csraise
 	ret
+
+; code unchanged below here
+;------------------------------------------------------------------------------
 
 chrout:
 	push	h

@@ -1,6 +1,6 @@
 ; SNIOS for WizNET W5500-based devices, via parallel-SPI interface
 ;
-	maclib	z80
+	maclib	z180
 
 	public	NTWKIN, NTWKST, CNFTBL, SNDMSG, RCVMSG, NTWKER, NTWKBT, NTWKDN, CFGTBL
 
@@ -86,40 +86,141 @@ msgptr:	dw	0
 msglen:	dw	0
 totlen:	dw	0
 
-getwiz1:
-	mvi	a,WZSCS
-	out	spi$ctl
-	mvi	c,spi$wr
-	xra	a
-	outp	a	; hi adr byte always 0
-	outp	e
-	res	2,d
-	outp	d
-if spi$rd <> spi$wr
-	mvi	c,spi$rd
-endif
-	inp	a	; prime MISO
-	inp	a
-	push	psw
-	xra	a
-	out	spi$ctl	; clear SCS
-	pop	psw
+;------------------------------------------------------------------------------
+
+; reverse or mirror the bits in a byte
+; 76543210 -> 01234567
+;
+; 18 bytes / 70 cycles
+;
+; from http://www.retroprogramming.com/2014/01/fast-z80-bit-reversal.html
+;
+; enter :  a = byte
+;
+; exit  :  a, c = byte reversed
+; uses  : af, c
+
+	
+cmirror:
+	mov	c,a		; a = 76543210
+	rlc
+	rlc			; a = 54321076
+	xra	c
+	ani	0AAh
+	xra	c		; a = 56341270
+	mov	c,a
+	rlc
+	rlc
+	rlc			; a = 41270563
+	rrcr	c		; l = 05634127
+	xra	c
+	ani	66h
+	xra	c		; a = 01234567
+	mov	c,a
+	ret
+ 
+;Lower the SC130 SD card CS using the GPIO address
+;
+;input (H)L = SD CS selector of 0 or 1
+;uses AF
+
+cslower:
+	in0	a,(CNTR)	;check the CSIO is not enabled
+	ani	CNTRTE+CNTRRE
+	jrnz	cslower
+
+;	mov	a,l
+;	ani	01h		;isolate SD CS 0 and 1 (to prevent bad input).    
+;	inr	a		;convert input 0/1 to SD1/2 CS
+;	xri	03h		;invert bits to lower correct I/O bit.
+;	rlc
+;	rlc			;SC130 SD1 CS is on Bit 2 (SC126 SD2 is on Bit 3).
+	mvi	a,0f7h
+	out0	a,(IOSYSTEM)
 	ret
 
+;Raise the SC180 SD card CS using the GPIO address
+;
+;uses AF
+
+csraise:
+	in0	a,(CNTR)	;check the CSIO is not enabled
+	ani	CNTRTE+CNTRRE
+	jrnz	csraise
+
+	mvi	a,0ffh		;SC130 SC1 CS is on Bit 2 and SC126 SC2 CS is on Bit 3, raise both.
+	out0	a,(IOSYSTEM)
+	ret
+
+
+;Do a write bus cycle to the SD drive, via the CSIO
+;
+;input L = byte to write to SD drive
+	
+writebyte:
+	call	cmirror		; reverse the bits before we busy wait
+writewait:
+	in0	a,(CNTR)
+	tsti	CNTRTE+CNTRRE	; check the CSIO is not enabled
+	jrnz	writewait
+
+	ori	CNTRTE		; set TE bit
+	out0	c,(TRDR)	; load (reversed) byte to transmit
+	out0	a,(CNTR)	; enable transmit
+	ret
+
+;Do a read bus cycle to the SD drive, via the CSIO
+;  
+;output L = byte read from SD drive
+
+readbyte:
+	in0	a,(CNTR)
+	tsti	CNTRTE+CNTRRE	; check the CSIO is not enabled
+	jrnz	readbyte
+
+	ori	CNTRRE		; set RE bit
+	out0	a,(CNTR)	; enable reception
+readwait:
+	in0	a,(CNTR)
+	tsti	CNTRRE		; check the read has completed
+	jrnz	readwait
+
+	in0	a,(TRDR)	; read byte
+	jmp	cmirror		; reverse the byte, leave in C and A
+
+ 
+;------------------------------------------------------------------------------
+
+; call with offset in e, bsb in d, sets write bit
+; return with byte in a and c
+getwiz1:
+	call	cslower
+	xra	a
+	call	writebyte	; hi adr byte always 0
+	mov	a,e
+	call	writebyte	; lo
+	res	2,d		; read
+	mov	a,d
+	call	writebyte	; read
+	call	readbyte	; data
+	call	csraise
+	mov	a,c
+	ret
+
+; call with data in a, offset in e, bsb in d
 putwiz1:
 	push	psw
-	mvi	a,WZSCS
-	out	spi$ctl
-	mvi	c,spi$wr
+	call	cslower
 	xra	a
-	outp	a	; hi adr byte always 0
-	outp	e
-	setb	2,d
-	outp	d
+	call	writebyte	; hi adr byte always 0
+	mov	a,e
+	call	writebyte	
+	setb	2,d		; write
+	mov	a,d
+	call	writebyte	
 	pop	psw
-	outp	a	; data
-	xra	a
-	out	spi$ctl	; clear SCS
+	call	writebyte	; data
+	call	csraise
 	ret
 
 ; Get 16-bit value from chip
@@ -127,22 +228,19 @@ putwiz1:
 ; Entry: A=value for IDM_AR1
 ; Return: HL=register pair contents
 getwiz2:
-	mvi	a,WZSCS
-	out	spi$ctl
-	mvi	c,spi$wr
+	call	cslower
 	xra	a
-	outp	a	; hi adr byte always 0
-	outp	e
+	call	writebyte	; hi adr byte always 0
+	mov	a,e
+	call	writebyte	; lo adr byte 
 	res	2,d
-	outp	d
-if spi$rd <> spi$wr
-	mvi	c,spi$rd
-endif
-	inp	h	; prime MISO
-	inp	h	; data
-	inp	l	; data
-	; A still 00
-	out	spi$ctl	; clear SCS
+	mov	a,d
+	call	writebyte	; read
+	call	readbyte
+	mov	h,a
+	call	readbyte
+	mov	l,a
+	call	csraise
 	ret
 
 ; Put 16-bit value to chip
@@ -150,18 +248,19 @@ endif
 ; Entry: A=value for IDM_AR1
 ;        HL=register pair contents
 putwiz2:
-	mvi	a,WZSCS
-	out	spi$ctl
-	mvi	c,spi$wr
+	call	cslower
 	xra	a
-	outp	a	; hi adr byte always 0
-	outp	e
+	call	writebyte	; hi adr byte always 0
+	mov	a,e
+	call	writebyte	; lo adr
 	setb	2,d
-	outp	d
-	outp	h	; data to write
-	outp	l
-	; A still 00
-	out	spi$ctl	; clear SCS
+	mov	a,d
+	call	writebyte	; write	
+	mov	a,h
+	call	writebyte	; data h to write
+	mov	a,l
+	call	writebyte	; data l
+	call	csraise
 	ret
 
 ; Issue command, wait for complete
@@ -170,17 +269,17 @@ putwiz2:
 wizcmd:	mov	b,a
 	mvi	e,sn$cr
 	setb	2,d
-	mvi	a,WZSCS
-	out	spi$ctl
-	mvi	c,spi$wr
+	call	cslower
 	xra	a
-	outp	a	; hi adr byte always 0
-	outp	e
-	outp	d
-	outp	b	; command
-	; A still 00
-	out	spi$ctl	; clear SCS
-wc0:	call	getwiz1
+	call	writebyte	; hi adr byte always 0
+	mov	a,e	
+	call	writebyte	; lo adr (sn$cr, 1)
+	mov	a,d
+	call	writebyte	; write	
+	mov	a,b
+	call	writebyte	; command
+	call	csraise
+wc0:	call	getwiz1		; lo addr in e (sn$cr)
 	ora	a
 	jrnz	wc0
 	mvi	e,sn$sr
@@ -254,36 +353,31 @@ gs2:	stc	; failed to open
 	ret
 
 ; HL=socket relative pointer (TX_WR)
-; DE=length
-; Returns: HL=msgptr, C=spi$wr
-cpsetup:
-	mvi	a,WZSCS
-	out	spi$ctl
-	mvi	c,spi$wr
-	outp	h
-	outp	l
-	lda	cursok
-	ora	b
-	outp	a
-	lhld	msgptr
-	ret
-
+; DE=length, 
+; HL=msgptr, addr of destination in chip
+; txbuf0
 cpyout:
-	mvi	b,txbuf0
-	call	cpsetup
-	mov	b,e	; fraction of page
-	mov	a,e
-	ora	a
-	jrz	co0	; exactly 256
-	outir		; do partial page
-	; B is now 0 (256 bytes)
-	mov	a,d
-	ora	a
-	jrz	co1
-co0:	outir	; 256 (more) bytes to xfer
-co1:	shld	msgptr
-	xra	a
-	out	spi$ctl	; clear SCS
+	mvi	b,txbuf0	; B data
+	call	cslower
+	mov	a,h
+	call	writebyte	; addr hi
+	mov	a,l
+	call	writebyte	; addr lo
+	lda	cursok
+	ora	b	
+	call	writebyte	; bsb
+
+	mov	b,e		; data count
+	lhld	msgptr		; HL msgptr
+	xchg			; into DE
+
+co0:   	ldax	d
+    	call 	writebyte
+    	inx	d		; ptr++
+   	djnz 	co0  		; length != 0, go again
+co1:	xchg
+	shld	msgptr
+	call	csraise
 	ret
 
 ; HL=socket relative pointer (RX_RD)
@@ -291,24 +385,26 @@ co1:	shld	msgptr
 ; Destroys IDM_AR0, IDM_AR1
 cpyin:
 	mvi	b,rxbuf0
-	call	cpsetup	;
-if spi$rd <> spi$wr
-	mvi	c,spi$rd
-endif
-	inp	a	; prime MISO
-	mov	b,e	; fraction of page
-	mov	a,e
-	ora	a
-	jrz	ci0	; exactly 256
-	inir		; do partial page
-	; B is now 0 (256 bytes)
-	mov	a,d
-	ora	a
-	jrz	ci1
-ci0:	inir	; 256 (more) bytes to xfer
-ci1:	shld	msgptr
-	xra	a
-	out	spi$ctl	; clear SCS
+	call 	cslower
+	mov	a,h
+	call	writebyte	; addr hi
+	mov	a,l
+	call	writebyte	; addr lo
+	lda	cursok
+	ora	b	
+	call	writebyte	; bsb
+
+	mov	b,e
+	lhld	msgptr		; HL msgptr
+	xchg			; into DE
+
+ci0:	call	readbyte 	; data
+	stax	d	
+    	inx	d		; ptr++
+   	djnz 	ci0  		; length != 0, go again
+ci1:	xchg
+	shld	msgptr
+	call	csraise
 	ret
 
 ; L=bits to reset
@@ -358,8 +454,8 @@ CNFTBL:
 
 ;	Send Message on Network
 SNDMSG:			; BC = message addr
-	sbcd	msgptr
-	lixd	msgptr
+	sbcd	msgptr	; store BC addr into msgptr
+	lixd	msgptr	; put message pointer into index register
 	ldx	b,+1	; SID - destination
 	call	getsrv
 	jrc	serr
@@ -373,23 +469,26 @@ SNDMSG:			; BC = message addr
 	aci	0
 	mov	h,a	; HL=msg length
 	shld	msglen
-	mvi	e,sn$txwr
-	call	getwiz2
-	shld	curptr
-	lhld	msglen
-	lbcd	curptr
-	dad	b
-	mvi	e,sn$txwr
-	call	putwiz2
+	mvi	e,sn$txwr ; 0x24, Socketn tx write pointer
+	call	getwiz2	; into hl
+
+	shld	curptr	; store hl in curptr
+	lhld	msglen	; load hl with msglen
+	lbcd	curptr	; load bc with curptr
+	dad	b	; add hl+bc to hl 
+	mvi	e,sn$txwr  ; 
+	call	putwiz2 ; update Socketn tx write pointer
+
 	; send data
 	lhld	msglen
-	xchg
-	lhld	curptr
-	call	cpyout
+	xchg		; length into DE
+	lhld	curptr	; chip address into HL
+	call	cpyout	; msglen in DE, curptr in HL, socket in A
+
 	lda	cursok
 	ori	sock0
 	mov	d,a
-	mvi	a,SEND
+	mvi	a,SEND  ; send the message
 	call	wizcmd
 	; ignore Sn_SR?
 	mvi	c,00011010b	; SEND_OK, DISCON, or TIMEOUT bit
@@ -469,7 +568,7 @@ rm0:	; D must be socket base...
 	jrz	rm0
 	shld	msglen		; not CP/NET msg len
 	mvi	e,sn$rxrd	; pointer
-	call	getwiz2
+	call	getwiz2	; get rxrd addr
 	shld	curptr
 	lbcd	msglen	; BC=Sn_RX_RSR
 	lhld	totlen
@@ -480,11 +579,11 @@ rm0:	; D must be socket base...
 	lhld	msglen	; BC=Sn_RX_RD, HL=Sn_RX_RSR
 	dad	b	; HL=nxt RD
 	mvi	e,sn$rxrd
-	call	putwiz2
+	call	putwiz2	; write addr to rxrd
 	; DE destroyed...
 	lded	msglen
 	lhld	curptr
-	call	cpyin
+	call	cpyin	; get payload
 	lda	cursok
 	ori	sock0
 	mov	d,a

@@ -1,6 +1,6 @@
 ; netcfg.sub
 ; converted from unix format to dos format using command below
-; unix2dos -n src/w5500/netcfg.sub  bld-SC126/w5500/z180spi/bin/cpnet3/netcfg.sub
+; unix2dos -n src/w5500c/netcfg.sub  bld-SC126/w5500c/z180csio/bin/cpnet3/netcfg.sub
 wizcfg M 00:AA:BB:CC:DE:02
 wizcfg G 192.168.178.1
 wizcfg I 192.168.178.25

@@ -2,7 +2,6 @@
 
 	public	wizcfg,wizcf0,wizcmd,wizget,wizset,wizclose,setsok,settcp
 	public	gkeep,skeep
-	public	csraise, cslower, lmirror ; perhaps use these in wizdbg
 
 	maclib	config
 
@@ -13,11 +12,7 @@ if (SPIDEV eq H8xSPI)
 	extrn	nvget, vcksum
 endif
 
-if (SPIDEV eq z180spi)   
-	maclib	z180
-else
 	maclib	z80
-endif
 
 ; WIZNET CTRL bit for writing
 WRITE	equ	00000100b
@@ -66,233 +61,6 @@ DISCON	equ	08h
 
 	cseg
 
-
-;------------------------------------------------------------------------------
-if (SPIDEV eq z180spi)   
-
-RTCIO	EQU	0Ch		; RTC LATCH REGISTER ADR
-Z180BASE equ	0C0h
-Z180CNTR EQU	Z180BASE + 0Ah	; CSI/O CONTROL
-Z180TRDR EQU	Z180BASE + 0Bh	; CSI/O TRANSMIT/RECEIVE
-
-
-;SD_DEVCNT EQU SDCNT		; NUMBER OF PHYSICAL UNITS (SOCKETS)
-OPRREG	EQU	RTCIO		; USES RTC LATCHES FOR OPERATION
-OPRDEF	EQU	00001100b	; QUIESCENT STATE (/CS1 & /CS2 DEASSERTED)
-OPRMSK	EQU	00001100b	; MASK FOR BITS WE OWN IN RTC LATCH PORT
-CS0	EQU	00000100b	; RTC:2 IS SELECT FOR PRIMARY SPI CARD
-CS1	EQU	00001000b	; RTC:3 IS SELECT FOR SECONDARY SPI CARD
-CNTR	EQU	Z180CNTR
-CNTRTE	equ	10h
-CNTRRE	equ	20h
-TRDR	EQU	Z180TRDR
-IOBASE	EQU	OPRREG		; IOBASE
-IOSYSTEM equ	0Ch
-
-
-; reverse or mirror the bits in a byte
-; 76543210 -> 01234567
-;
-; 18 bytes / 70 cycles
-;
-; from http://www.retroprogramming.com/2014/01/fast-z80-bit-reversal.html
-;
-; enter :  a = byte
-;
-; exit  :  a, c = byte reversed
-; uses  : af, c
-
-	
-cmirror:
-	mov	c,a		; a = 76543210
-	rlc
-	rlc			; a = 54321076
-	xra	c
-	ani	0AAh
-	xra	c		; a = 56341270
-	mov	c,a
-	rlc
-	rlc
-	rlc			; a = 41270563
-	rrcr	c		; l = 05634127
-	xra	c
-	ani	66h
-	xra	c		; a = 01234567
-	mov	c,a
-	ret
- 
-;Lower the SC130 SD card CS using the GPIO address
-;
-;input (H)L = SD CS selector of 0 or 1
-;uses AF
-
-cslower:
-	in0	a,(CNTR)	;check the CSIO is not enabled
-	ani	CNTRTE+CNTRRE
-	jrnz	cslower
-
-;	mov	a,l
-;	ani	01h		;isolate SD CS 0 and 1 (to prevent bad input).    
-;	inr	a		;convert input 0/1 to SD1/2 CS
-;	xri	03h		;invert bits to lower correct I/O bit.
-;	rlc
-;	rlc			;SC130 SD1 CS is on Bit 2 (SC126 SD2 is on Bit 3).
-	mvi	a,0f7h
-	out0	a,(IOSYSTEM)
-	ret
-
-;Raise the SC180 SD card CS using the GPIO address
-;
-;uses AF
-
-csraise:
-	in0	a,(CNTR)	;check the CSIO is not enabled
-	ani	CNTRTE+CNTRRE
-	jrnz	csraise
-
-	mvi	a,0ffh		;SC130 SC1 CS is on Bit 2 and SC126 SC2 CS is on Bit 3, raise both.
-	out0	a,(IOSYSTEM)
-	ret
-
-
-;Do a write bus cycle to the SD drive, via the CSIO
-;
-;input L = byte to write to SD drive
-	
-writebyte:
-;	mov	a,l
-	call	cmirror		; reverse the bits before we busy wait
-writewait:
-	in0	a,(CNTR)
-	tsti	CNTRTE+CNTRRE	; check the CSIO is not enabled
-	jrnz	writewait
-
-	ori	CNTRTE		; set TE bit
-	out0	c,(TRDR)	; load (reversed) byte to transmit
-	out0	a,(CNTR)	; enable transmit
-	ret
-
-;Do a read bus cycle to the SD drive, via the CSIO
-;  
-;output L = byte read from SD drive
-
-readbyte:
-	in0	a,(CNTR)
-	tsti	CNTRTE+CNTRRE	; check the CSIO is not enabled
-	jrnz	readbyte
-
-	ori	CNTRRE		; set RE bit
-	out0	a,(CNTR)	; enable reception
-readwait:
-	in0	a,(CNTR)
-	tsti	CNTRRE		; check the read has completed
-	jrnz	readwait
-
-	in0	a,(TRDR)	; read byte
-	jmp	cmirror		; reverse the byte, leave in L and A
-
- 
-;------------------------------------------------------------------------------
-
-
-; Send socket command to WIZNET chip, wait for done.
-; A = command, D = socket BSB
-; Destroys A
-wizcmd:
-	push	psw
-	call	cslower
-
-	xra	a
-	call	writebyte	; hi addr
-
-	mvi	a,SnCR
-	call	writebyte	; lo addr
-
-	mov	a,d
-	ori	WRITE
-	call	writebyte	; bsb
-
-	pop	psw
-	call	writebyte	; start command
-	call	csraise
-
-wc0:
-	call	cslower
-
-	xra	a
-	call	writebyte	; hi addr
-
-	mvi	a,SnCR
-	call	writebyte	; lo addr
-
-	mov	a,d
-	call	writebyte	; bsd
-
-	call	readbyte	; data	
-
-	push	psw
-	call	csraise
-	pop	psw
-
-	ora	a		; done ?
-	jnz	wc0
-	ret
-
-; E = BSB, D = CTL, HL = data, B = length
-; used by wizcfg to read back w5500 settings
-wizget:
-	push	b		; save count
-	push	hl		; save address
-
-	call	cslower
-
-	xra	a		; hi adr always 0
-	call	writebyte 	; hi adr
-
-	mov	a,e
-	call	writebyte 	; lo adr
-
-	mov	a,d
-	call	writebyte 	; bsd / ctl
-
-	pop	de		; restore address
-	pop	b		; retrieve count
-wizgetloop:	
- 	call	readbyte 	; data
-	stax	d	
-    	inx	d		; ptr++
-   	djnz 	wizgetloop  	; length != 0, go again
-	call	csraise
-	ret
-
-; HL = data to send, E = offset, D = BSB, B = length
-; destroys HL, B, C, A
-; n.b. used by set MAC in wizcfg
-wizset:
-	push	d
-	push	b		; save count
-	push	hl		; save address
-	call	cslower
-	xra	a		; hi adr always 0
-	call	writebyte 	; hi adr
-	mov	a,e	
-	call	writebyte 	; lo adr
-	mov	a,d
-	ori	WRITE
-	call	writebyte ; WRITE (4)
-	pop	de		; restore address
-	pop	b		; retrieve count
-wizsetloop:	
-    	ldax	d
-    	call 	writebyte
-    	inx	d		; ptr++
-   	djnz 	wizsetloop  	; length != 0, go again
-	call	csraise
-	pop	d
-	ret
-
-;------------------------------------------------------------------------------
-else
 ; Send socket command to WIZNET chip, wait for done.
 ; A = command, D = socket BSB
 ; Destroys A
@@ -364,8 +132,6 @@ wizset:
 	xra	a	; not SCS
 	out	spi$ctl
 	ret
-
-endif
 
 ; Close socket if active (SR <> CLOSED)
 ; D = socket BSB

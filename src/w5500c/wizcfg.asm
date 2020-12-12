@@ -50,8 +50,11 @@ usage:	db	'WIZCFG version 1.4',CR,LF
 	db	'       WIZCFG M macadr',CR,LF
 	db	'       WIZCFG N cid',CR,LF
 	db	'       WIZCFG {0..7} sid ipadr port [keep]',CR,LF
-if (SPIDEV eq MT011)
+if ( (SPIDEV eq MT011) OR (SPIDEV eq z180csio) )
 	db	'Sets network config in W5500',CR,LF
+if (SPIDEV eq z180csio)
+	db	'Built for SC126 Z180 CSIO',CR,LF
+
 else
 	db	'       WIZCFG R',CR,LF
 	db	'       WIZCFG L {A:..P:,LST:}',CR,LF
@@ -1367,4 +1370,4 @@ nskkp:	ds	1	; KPALVTR
 
 nvbuf:	ds	512
 
-	end
+;	end

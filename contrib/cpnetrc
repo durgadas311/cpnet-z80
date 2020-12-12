@@ -9,7 +9,7 @@ cpnet_cid=01
 #cpnet_server03=HostFileBdos ~/HostFileBdos
 cpnet_server00=HostFileBdos /home/david
 #cpnet_debug=1
-hostfilebdos00_drive_i=/home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500/z180spi/bin/cpnet3
+hostfilebdos00_drive_i=/home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500c/z180csio/bin/cpnet3
 hostfilebdos00_drive_h=/home/david/z88dk/examples/sc126
 hostfilebdos00_drive_n=/home/david/beaver/network
 hostfilebdos00_drive_o=/home/david/beaver/hd
@@ -31,7 +31,7 @@ cpnetserver_max = 16
 # Windows directory example c:/data
 cpnetserver_root_dir =~/HostFileBdos
 cpnetserver_drive_h=/home/david/z88dk/examples/sc126
-cpnetserver_drive_i=/home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500/z180spi/bin/cpnet3
+cpnetserver_drive_i=/home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500c/z180csio/bin/cpnet3
 cpnetserver_drive_j=/home/david/RomWBW-dev/Binary
 cpnetserver_drive_n=/home/david/beaver/network
 cpnetserver_drive_o=/home/david/beaver/hd
