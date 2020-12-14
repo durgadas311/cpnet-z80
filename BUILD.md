@@ -34,7 +34,7 @@ binaries in it.
 To build for the Heathkit H8/H89 with the H8xSPI adapter with WIZ850io and NVRAM:
 
 1. 'cd' into the repository top-level directory
-1. type the command `make` (or `make NIC=w5500 HBA=h8xspi`)
+1. type the command `make NIC=w5500 HBA=h8xspi`
 
 Results will be placed in a `bld` subdirectory:
 * CP/NET 1.2 files in `bld/w5500/h8xspi/bin/cpnet12`
@@ -44,7 +44,7 @@ Results will be placed in a `bld` subdirectory:
 To build for the RC2014 with the MT011 adapter with Feathwing WizNET module:
 
 1. 'cd' into the repository top-level directory
-1. type the command `make HBA=mt011` (or `make NIC=w5500 HBA=mt011`)
+1. type the command `make NIC=w5500 HBA=mt011`
 
 Results will be placed in a `bld` subdirectory:
 * CP/NET 1.2 files in `bld/w5500/mt011/bin/cpnet12`

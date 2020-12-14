@@ -1,22 +1,42 @@
-# Assumes PWD = CPMDrive_D
+# Makefile for cpnet-z80.
+# General usage: make NIC=xxx HBA=yyy
+# Creates build results in $(BUILD)/$(NIC)/$(HBA)
 
-# Default build platform/adapter:
-#	h8x/h8xspi/w5500
-#	rc2014/mt011/w5500
-#	kaypro/vcpnet/vcpnet
-PLAT = h8x
+# Some default values.
+# Use NIC=xxx HBA=yyy on commandline to override.
 HBA = h8xspi
 NIC = w5500
-# Known NICs:
-#	w5500		WizNET W5500 via SPI, various modules
-#	mms77422	Magnolia Microsystems MagNET, ca. 1983, deprecated
-#	ft245r		USB via Serial port
-#	vcpnet		Fictitious device for emulations
-# Known HBAs:
-#	h8xspi		Heathkit SPI to WIZ850io and NVRAM
-#	mt011		RC2014 SPI to Featherwing W5500 module
 
+# Known NICs:
+#	w5500		WizNET W5500 via SPI, various modules.
+#	mms77422	Magnolia Microsystems MagNET, ca. 1983, deprecated.
+#	vcpnet		Fictitious device for emulations.
+#	serial		Simple serial protocol for reliable transports.
+#	ser-dri		Original DRI reference serial protocol, error checking/retry.
+# W5500 HBAs:
+#	h8xspi		Heathkit SPI to WIZ850io and NVRAM.
+#	mt011		RC2014 SPI to Featherwing W5500 module.
+# Serial protocol HBAs:
+#	rc-siob		RC2014 main serial port
+#	ins8250		Serial port via INS8250 (or equiv) UART.
+#	kaypro		Kaypro Z80-SIO "serial data" port.
+#	ft245r		FTDI USB fifo adapter.
+# Null HBA:
+#	null		Provides no additional dependencies.
+
+# customize for build host platform
+CRLFP = unix2dos
+CRLF2 = unix2dos -n
+VCPM = vcpm
+
+# Output/build directory.
+# Override on commandline using BUILD=/some/path.
 BUILD = bld
+
+#############################################################
+# Generally, nothing below here should require customization.
+# Furthermore, all the above may be done on the commandline.
+#############################################################
 
 BLD_TOP = $(BUILD)/$(NIC)/$(HBA)
 
@@ -38,30 +58,6 @@ CPNLDR = dist/cpnetldr.com
 SNDEPS = snios.rel
 SNLINK = snios
 
-ifeq ($(NIC),serial)
-SNDEPS += chrio.rel
-SNLINK = snios,chrio
-endif
-# *sigh*, just like 'serial' but have no .OR., .MATCH., ...
-ifeq ($(NIC),ser-dri)
-SNDEPS += chrio.rel
-SNLINK = snios,chrio
-endif
-
-ifeq ($(NIC),w5500)
-TARGETS += wizcfg.com wizdbg.com
-WZCDEPS = wizcfg.rel libwiznt.rel
-WZCLINK = wizcfg,libwiznt'[oc,nr]'
-endif
-
-ifeq ($(HBA),h8xspi)
-TARGETS += nvram.com
-ND3DEP = ndos3wiz.com
-WZCDEPS += libnvram.rel
-WZCLINK = wizcfg,libwiznt,libnvram'[oc,nr]'
-CPNLDR = $(BLD_SRC)/cpnldr-w.com
-endif
-
 # Files in dist subdir:
 CPNET = cpnetsts.com dskreset.com endlist.com local.com \
 	login.com logoff.com mail.com network.com xsubnet.com
@@ -70,10 +66,8 @@ CPN3 = $(CPNET)
 XCPN3 = ntpdate.com rsxrm.com rsxls.com
 XCPN2 = netdown.com
 
-# customize for build host platform
-CRLFP = unix2dos
-CRLF2 = unix2dos -n
-VCPM = vcpm
+-include src/$(NIC)/makevars
+-include src/$(HBA)/makevars
 
 .SECONDARY:
 
@@ -115,7 +109,7 @@ $(BLD_SRC)/%.asm: src/$(HBA)/%.asm
 	$(CRLF2) $^ $@
 
 %/wizcfg.com: $(addprefix %/,$(WZCDEPS))
-	$(VCPM) link $(WZCLINK)
+	$(VCPM) link $(WZCLINK)'[oc,nr]'
 
 %/snios.spr: $(addprefix %/,$(SNDEPS)) %/snios12.rel
 	$(VCPM) link "snios=snios12,$(SNLINK)[os,nr]"

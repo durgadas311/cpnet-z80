@@ -6,10 +6,23 @@ configuration is:
 src/
     config.lib
     $(NIC)/
+        makevars
         config.lib
     $(HBA)/
+        makevars
         config.lib
 ```
+
+`makevars` are optional, but they must contain valid 'make' assignments.
+See details in section below.
+Be aware that some use "+=" to append new items, and failure to use that
+syntax can cause dependencies to fail or incomplete builds.
+'makevars' files are included in this order, after defaults are set:
+```
+src/$(NIC)/makevars
+src/$(HBA)/makevars
+```
+
 `config.lib` files are required for every NIC and HBA, although they
 may be empty.
 
@@ -53,6 +66,20 @@ The `snios.asm` currently only checks for whether the SPI
 read data port is the same as the write data port (an anomaly of
 the MT011). Other differences in HBAs may require adding more conditionals
 to `snios.asm`.
+
+### Makevars
+
+The following 'make' variables are typically modified by 'makevars' files:
+
+Variable|Use|Notes
+--------|---|----------------------
+TARGETS|+=|Additional targets to build, typically COM file utilities. Initially "netstat.com srvstat.com rdate.com tr.com".
+SNDEPS|+=|Additional REL files required by SNIOS.REL. Initially "snios.rel".
+SNLINK|=|LINK command segment for SNIOS. Will be prefixed with target, suffixed with "[os,nr]" or "[op,nr]". Initially "snios".
+ND3DEP|=|The COM file to use as base for NDOS3. Default is 'ndos3dup.com'.
+WZCDEPS|+=|Additional REL files to build for WIZCFG (not used unless TARGETS adds "wizcfg.com").
+WZCLINK|=|LINK command for WIZCFG. Will be suffixed with "[oc,nr]".
+CPNLDR|=|Custom CPNETLDR.COM to build. Default is original "dist/cpnetldr.com".
 
 ### See also
 
