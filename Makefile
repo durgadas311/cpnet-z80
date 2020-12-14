@@ -4,6 +4,9 @@
 #	h8x/h8xspi/w5500
 #	rc2014/mt011/w5500
 #	kaypro/vcpnet/vcpnet
+#	rc2014/z180csio/w5500c
+#	rc2014/rc-siob/serial
+
 #PLAT = h8x
 #HBA = h8xspi
 #NIC = w5500
@@ -24,16 +27,15 @@ NIC = w5500c
 #	mms77422	Magnolia Microsystems MagNET, ca. 1983, deprecated
 #	ft245r		USB via Serial port
 #	vcpnet		Fictitious device for emulations
-#	w5500s		WizNET W5500 via z180 CSIO, SC126
+#	w5500c		WizNET W5500 via z180 CSIO, SC126
 
 # Known HBAs:
 #	h8xspi		Heathkit SPI to WIZ850io and NVRAM
 #	mt011		RC2014 SPI to Featherwing W5500 module
 #	z180csio	SC126 SPI to W5500 module
 
-#BUILD = bld
-BUILD = bld-SC126
-#BUILD = bld-test
+BUILD = bld
+#BUILD = bld-SC126
 
 BLD_TOP = $(BUILD)/$(NIC)/$(HBA)
 
@@ -78,6 +80,7 @@ ifeq ($(NIC),w5500c)
 # some tools still need z180lib so cant use next line
 #LIBS = z180.lib config.lib
 TARGETS += wizcfg.com wizdbg.com
+TARGETS += netcfg.sub wizregs.sub 
 WZCDEPS = wizcfg.rel libwiznt.rel
 WZCLINK = wizcfg,libwiznt'[oc,nr]'
 endif
@@ -94,7 +97,7 @@ endif
 CPNET = cpnetsts.com dskreset.com endlist.com local.com \
 	login.com logoff.com mail.com network.com xsubnet.com
 CPN2 = ndos.spr ccp.spr cpnetldr.com $(CPNET)
-CPN3 = $(CPNET)
+CPN3 =  $(CPNET)
 XCPN3 = ntpdate.com rsxrm.com rsxls.com
 XCPN2 = netdown.com
 
@@ -107,8 +110,14 @@ VCPM = vcpm
 
 all: $(DIRS) $(addprefix $(BLD_LIB)/,$(LIBS)) \
 	cpnet2 cpnet3
+
+# used during development - dangerous, disable for distribution
 clean:
 	rm -rf $(BUILD)/$(NIC)/$(HBA)
+
+# convert helper submit files
+%.sub:
+	$(CRLF2)  src/$(NIC)/$(notdir $@) $@ 
 
 cpnet2: $(addprefix $(BLD_BIN2)/,$(TARGETS) $(CPN2) snios.spr $(XCPN2))
 
@@ -173,3 +182,4 @@ $(BLD_BIN2)/cpnetldr.com: $(CPNLDR)
 
 %.rel: %.asm
 	$(VCPM) rmac "$(notdir $?)" '$$SZLL'
+

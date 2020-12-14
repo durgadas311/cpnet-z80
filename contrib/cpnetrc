@@ -6,7 +6,7 @@ cpnet_flow_control=rts/cts
 #cpnet_protocol=dri binary
 cpnet_protocol=ascii crc
 cpnet_cid=01
-#cpnet_server03=HostFileBdos ~/HostFileBdos
+#cpnet_server03=HostFileBdos /home/david/HostFileBdos
 cpnet_server00=HostFileBdos /home/david
 #cpnet_debug=1
 hostfilebdos00_drive_i=/home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500c/z180csio/bin/cpnet3
@@ -29,14 +29,15 @@ cpnetserver_sid = 00
 cpnetserver_max = 16
 #cpnetserver_debug
 # Windows directory example c:/data
-cpnetserver_root_dir =~/HostFileBdos
-cpnetserver_drive_h=/home/david/z88dk/examples/sc126
-cpnetserver_drive_i=/home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500c/z180csio/bin/cpnet3
-cpnetserver_drive_j=/home/david/RomWBW-dev/Binary
-cpnetserver_drive_n=/home/david/beaver/network
-cpnetserver_drive_o=/home/david/beaver/hd
+cpnetserver_root_dir =/home/david/HostFileBdos
+cpnetserver_drive_h = /home/david/z88dk/examples/sc126
+cpnetserver_drive_i = /home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500c/z180csio/bin/cpnet3
+cpnetserver_drive_j = /home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500c/z180csio/bin/cpnet12
+cpnetserver_drive_k = /home/david/RomWBW-dev/Binary
+cpnetserver_drive_n = /home/david/beaver/network
+cpnetserver_drive_o = /home/david/beaver/hd
 # Up to 16 printers, 0-f
-cpnetserver_lst0 = Diablo630Stream file=~/HostFileBdos/lst00.0.ps
-#cpnetserver_lst5 = Diablo630Stream file=lst00.5.ps
+cpnetserver_lst0 = Diablo630Stream file=/home/david/HostFileBdos/lst00.0.ps
+#cpnetserver_lst5 = Diablo630Stream file = lst00.5.ps
 diablo630_nogui = true
 diablo630_jobend = save

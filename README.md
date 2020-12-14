@@ -6,6 +6,7 @@ NIC | HBA | Description
 ----|-----|------------
 [w5500](W5500.md) | [h8xspi](H8XSPI.md) | Heathkit H8/H89 with WIZ850io and NVRAM
 [w5500](W5500.md) | [mt011](MT011.md) | RC2014 with MT011 and Featherwing W5500
+[w5500c](W5500.md) | [z180csio](Z180CSIO.md) | SC126 Z180 with W5500 breakout board
 [serial](SERIAL.md) | [ft245r](FT245R.md) | Serial over FT245R USB module, simple protocol
 [serial](SERIAL.md) | [rc-siob](RC-SIOB.md) | Serial support via FTDI cable for SC131
 [ser-dri](SER-DRI.md) | [ft245r](FT245R.md) | Serial over FT245R USB module, DRI protocol

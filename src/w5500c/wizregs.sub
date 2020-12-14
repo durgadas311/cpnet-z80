@@ -1,6 +1,4 @@
 ; wizregs.sub
-; converted from unix format to dos format using command below
-; unix2dos -n src/w5500c/wizregs.sub  bld-SC126/w5500c/z180csio/bin/cpnet3/wizregs.sub
 wizcfg
 wizdbg g 0 0 48 ; Common register
 wizdbg g 1 0 48 ; Socket 0

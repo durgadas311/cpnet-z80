@@ -9,5 +9,5 @@ if [[ ! -f ${JAR1} ]]; then
 	exit 1
 fi
 
-java -cp ${JAR1} ${CLASS} "${@}"
+/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java -cp ${JAR1} ${CLASS} "${@}"
 
