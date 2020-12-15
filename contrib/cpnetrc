@@ -31,8 +31,8 @@ cpnetserver_max = 16
 # Windows directory example c:/data
 cpnetserver_root_dir =/home/david/HostFileBdos
 cpnetserver_drive_h = /home/david/z88dk/examples/sc126
-cpnetserver_drive_i = /home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500c/z180csio/bin/cpnet3
-cpnetserver_drive_j = /home/david/Documents/GitHub/cpnet-z80/bld-SC126/w5500c/z180csio/bin/cpnet12
+cpnetserver_drive_i = /home/david/Documents/GitHub/cpnet-z80/bld/w5500c/z180csio/bin/cpnet3
+cpnetserver_drive_j = /home/david/Documents/GitHub/cpnet-z80/bld/w5500c/z180csio/bin/cpnet12
 cpnetserver_drive_k = /home/david/RomWBW-dev/Binary
 cpnetserver_drive_n = /home/david/beaver/network
 cpnetserver_drive_o = /home/david/beaver/hd

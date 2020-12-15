@@ -367,14 +367,17 @@ cpyout:
 	ora	b	
 	call	writebyte	; bsb
 
-	mov	b,e		; data count
-	lhld	msgptr		; HL msgptr
-	xchg			; into DE
-
+        push    de
+	lhld	msgptr		; get msgptr
+	xchg			; put it into DE
+        pop     hl
 co0:   	ldax	d
     	call 	writebyte
     	inx	d		; ptr++
-   	djnz 	co0  		; length != 0, go again
+        dcx	h               ; count down 1
+        mov     a,h             
+        ora     l
+        jrnz    co0 	
 co1:	xchg
 	shld	msgptr
 	call	csraise
@@ -394,16 +397,20 @@ cpyin:
 	ora	b	
 	call	writebyte	; bsb
 
-	mov	b,e
-	lhld	msgptr		; HL msgptr
-	xchg			; into DE
+        push    de              ; save count
+	lhld	msgptr		; get msgptr
+	xchg			; put it into DE
 
+        pop     hl              ; get count into HL
 ci0:	call	readbyte 	; data
 	stax	d	
     	inx	d		; ptr++
-   	djnz 	ci0  		; length != 0, go again
-ci1:	xchg
-	shld	msgptr
+        dcx	h               ; count down 1
+        mov     a,h             
+        ora     l
+        jrnz    ci0 	
+ci1:	xchg                    ; copy updated DE into HL 
+	shld	msgptr          ; and save it
 	call	csraise
 	ret
 

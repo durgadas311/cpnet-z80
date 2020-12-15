@@ -7,6 +7,10 @@
 	maclib	z180
 
 	maclib	config
+if 0
+	extrn	wizcfg, wizcmd, wizget, wizset, wizclose, setsok, settcp
+	public	nvbuf ; dummy
+endif
 
 WRITE	equ	00000100b
 
@@ -188,6 +192,7 @@ nocpnt:
 	lxi	d,nocpn
 	jmp	xitmsg
 
+if 1
 ;------------------------------------------------------------------------------
 cmirror:
 	mov	c,a		; a = 76543210
@@ -265,14 +270,16 @@ wizget:
 	call	writebyte	; addr lo
 	lda	bsb		; 
 	call	writebyte
-	lded	num
-	mov	b,e
-	lxi	d,buf		; address to save to
+	lhld    num             ; count into HL
+	lxi	d,buf		; address to save to, DE	
 wizgetloop:	
  	call	readbyte 	; data
 	stax	d	
     	inx	d		; ptr++
-   	djnz 	wizgetloop  	; length != 0, go again
+        dcx     h               ; count down 1
+        mov     a,h             
+        ora     l
+        jrnz    wizgetloop
 	call	csraise
 	ret
 
@@ -290,17 +297,20 @@ wizset:
 	lda	bsb
 	ori	WRITE
 	call	writebyte
-	lded	num		
-	mov	b,e		; data count
+	lhld    num             ; count into HL
 	lxi	d,buf		; data address
 wizsetloop:	
     	ldax	d
     	call 	writebyte
-    	inx	d		; ptr++
-   	djnz 	wizsetloop  	; length != 0, go again
+   	inx	d		; ptr++
+        dcx 	h               ; count down 1
+        mov     a,h             
+        ora     l
+        jrnz    wizgetloop
 	call	csraise
 	ret
 
+endif
 ; code unchanged below here
 ;------------------------------------------------------------------------------
 
@@ -451,5 +461,6 @@ num:	dw	0	; SET: one byte, GET: two bytes
 max:	dw	0	; maximum <num> allowed (for GET)
 
 buf:	ds	0
+nvbuf:	ds	0
 
 	end

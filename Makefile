@@ -153,6 +153,9 @@ $(BLD_SRC)/%.asm: src/$(NIC)/%.asm
 $(BLD_SRC)/%.asm: src/$(HBA)/%.asm
 	$(CRLF2) $^ $@
 
+#%/wizdbg.com: $(addprefix %/,wizdbg.rel)
+#	$(VCPM) link "wizdbg [oc]"
+
 %/wizcfg.com: $(addprefix %/,$(WZCDEPS))
 	$(VCPM) link $(WZCLINK)
 
