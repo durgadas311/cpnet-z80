@@ -4,3 +4,4 @@ MT011	equ	2	; MT011_SPI_WIZNET board for RC2014-Z80 systems.
 ; Other HBAs
 FT245R	equ	3
 VCPNET	equ	4
+Z180CSIO equ	5	; For W5500 variation "w5500c"

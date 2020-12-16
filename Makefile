@@ -9,6 +9,7 @@ NIC = w5500
 
 # Known NICs:
 #	w5500		WizNET W5500 via SPI, various modules.
+#	w5500c		WizNET W5500 via z180 CSIO, SC126
 #	mms77422	Magnolia Microsystems MagNET, ca. 1983, deprecated.
 #	vcpnet		Fictitious device for emulations.
 #	serial		Simple serial protocol for reliable transports.
@@ -16,6 +17,7 @@ NIC = w5500
 # W5500 HBAs:
 #	h8xspi		Heathkit SPI to WIZ850io and NVRAM.
 #	mt011		RC2014 SPI to Featherwing W5500 module.
+#	z180csio	SC126 SPI to W5500 module, NIC=w5500c
 # Serial protocol HBAs:
 #	rc-siob		RC2014 main serial port
 #	ins8250		Serial port via INS8250 (or equiv) UART.

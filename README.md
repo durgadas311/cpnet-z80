@@ -6,6 +6,7 @@ NIC | HBA | Description
 ----|-----|------------
 [w5500](W5500.md) | [h8xspi](H8XSPI.md) | Heathkit H8/H89 with WIZ850io and NVRAM
 [w5500](W5500.md) | [mt011](MT011.md) | RC2014 with MT011 and Featherwing W5500
+[w5500c](W5500.md) | [z180csio](Z180CSIO.md) | SC126 Z180 with W5500 breakout board
 [serial](SERIAL.md) | [ft245r](FT245R.md) | Serial over FT245R USB module, simple protocol
 [serial](SERIAL.md) | [rc-siob](RC-SIOB.md) | Serial support via FTDI cable for SC131
 [ser-dri](SER-DRI.md) | [ft245r](FT245R.md) | Serial over FT245R USB module, DRI protocol
@@ -65,17 +66,21 @@ Install and build as above.  make NIC=serial HBA=rc-siob
 
 Your next test is to configure the B port as follows. b:mode com1: 57600,n,8,1
 
-Then set up the ~/cpnet-z80/contrib/CpnetSerialServer config file. 
-cpnet_tty=/dev/ttyUSB2 57600 
+Then set up the ~/cpnet-z80/contrib/CpnetSerialServer config file.
+```
+cpnet_tty=/dev/ttyUSB2 57600
 cpnet_proto=BINARY
 cpnet_cid=01
 cpnet_server03=HostFileBdos
+```
 
 Start the server with ./serialserver conf=config
 then start the CP/M network with the following.
+```
 b:pip a:=c:ccp.spr
 cpnetldr
 network k:=c:[3]
+```
 
 See server documentation for further details.
 

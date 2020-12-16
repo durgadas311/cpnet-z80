@@ -1,0 +1,3 @@
+; Z180 CSIO on SC126 systems.
+
+SPIDEV	equ	Z180CSIO
