@@ -29,6 +29,7 @@ N/C |3.3V
 N/C |RST|
 N/C |INT|
 N/C |N/C|
+
 Unused connections are marked N/C.
 
 There is a red power LED on the W5500 module,
