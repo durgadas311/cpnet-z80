@@ -1,0 +1,4 @@
+TARGETS += wizcfg.com wizdbg.com
+WZCDEPS = wizcfg.rel libwiznt.rel 
+WZCLINK = wizcfg,libwiznt
+LIBS += z180.lib

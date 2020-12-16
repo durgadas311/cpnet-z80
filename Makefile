@@ -4,8 +4,10 @@
 
 # Some default values.
 # Use NIC=xxx HBA=yyy on commandline to override.
-HBA = h8xspi
-NIC = w5500
+#HBA = h8xspi
+#NIC = w5500
+HBA = z180csio
+NIC = w5500c
 
 # Known NICs:
 #	w5500		WizNET W5500 via SPI, various modules.
@@ -73,6 +75,14 @@ XCPN2 = netdown.com
 
 all: $(DIRS) $(addprefix $(BLD_LIB)/,$(LIBS)) \
 	cpnet2 cpnet3
+
+# used during development - dangerous, disable for distribution
+clean:
+	rm -rf $(BUILD)/$(NIC)/$(HBA)
+
+# convert helper submit files
+%.sub:
+	$(CRLF2)  src/$(NIC)/$(notdir $@) $@ 
 
 cpnet2: $(addprefix $(BLD_BIN2)/,$(TARGETS) $(CPN2) snios.spr $(XCPN2))
 

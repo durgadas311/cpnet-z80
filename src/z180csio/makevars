@@ -1,0 +1,4 @@
+ND3DEP = ndos3wiz.com
+WZCDEPS = wizcfg.rel libwiznt.rel
+WZCLINK = wizcfg,libwiznt
+CPNLDR = $(BLD_SRC)/cpnldr-w.com

@@ -1,4 +1,6 @@
 ; Z180 CSIO on SC126 systems.
+;
+z180csio equ	5
 
 ; definitions for chip select IO registers
 RTCIO	EQU	0Ch		; RTC LATCH REGISTER ADR

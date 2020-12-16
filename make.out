@@ -1,0 +1,419 @@
+unix2dos -n src/z80.lib bld/w5500c/z180csio/lib/z80.lib
+unix2dos: converting file src/z80.lib to file bld/w5500c/z180csio/lib/z80.lib in DOS format...
+cat src/config.lib src/w5500c/config.lib src/z180csio/config.lib | unix2dos >bld/w5500c/z180csio/lib/config.lib
+unix2dos -n src/z180.lib bld/w5500c/z180csio/lib/z180.lib
+unix2dos: converting file src/z180.lib to file bld/w5500c/z180csio/lib/z180.lib in DOS format...
+unix2dos -n src/netstat.asm bld/w5500c/z180csio/src/netstat.asm
+unix2dos: converting file src/netstat.asm to file bld/w5500c/z180csio/src/netstat.asm in DOS format...
+vcpm mac "netstat.asm" '$SZLL'
+D>mac netstat.asm $SZLL
+CP/M MACRO ASSEM 2.0
+039B
+001H USE FACTOR
+END OF ASSEMBLY
+
+vcpm hexcom "netstat"
+D>hexcom netstat
+HEXCOM	VERS: 3.00
+
+FIRST ADDRESS 0100
+LAST  ADDRESS 039A
+BYTES READ    0273
+RECORDS WRITTEN 06
+
+
+cp -v --update bld/w5500c/z180csio/src/netstat.com bld/w5500c/z180csio/bin/cpnet12/netstat.com
+'bld/w5500c/z180csio/src/netstat.com' -> 'bld/w5500c/z180csio/bin/cpnet12/netstat.com'
+unix2dos -n src/srvstat.asm bld/w5500c/z180csio/src/srvstat.asm
+unix2dos: converting file src/srvstat.asm to file bld/w5500c/z180csio/src/srvstat.asm in DOS format...
+vcpm mac "srvstat.asm" '$SZLL'
+D>mac srvstat.asm $SZLL
+CP/M MACRO ASSEM 2.0
+03B2
+01DH USE FACTOR
+END OF ASSEMBLY
+
+vcpm hexcom "srvstat"
+D>hexcom srvstat
+HEXCOM	VERS: 3.00
+
+FIRST ADDRESS 0100
+LAST  ADDRESS 03B1
+BYTES READ    028A
+RECORDS WRITTEN 06
+
+
+cp -v --update bld/w5500c/z180csio/src/srvstat.com bld/w5500c/z180csio/bin/cpnet12/srvstat.com
+'bld/w5500c/z180csio/src/srvstat.com' -> 'bld/w5500c/z180csio/bin/cpnet12/srvstat.com'
+unix2dos -n src/rdate.asm bld/w5500c/z180csio/src/rdate.asm
+unix2dos: converting file src/rdate.asm to file bld/w5500c/z180csio/src/rdate.asm in DOS format...
+vcpm mac "rdate.asm" '$SZLL'
+D>mac rdate.asm $SZLL
+CP/M MACRO ASSEM 2.0
+0353
+01DH USE FACTOR
+END OF ASSEMBLY
+
+vcpm hexcom "rdate"
+D>hexcom rdate
+HEXCOM	VERS: 3.00
+
+FIRST ADDRESS 0100
+LAST  ADDRESS 0352
+BYTES READ    0253
+RECORDS WRITTEN 05
+
+
+cp -v --update bld/w5500c/z180csio/src/rdate.com bld/w5500c/z180csio/bin/cpnet12/rdate.com
+'bld/w5500c/z180csio/src/rdate.com' -> 'bld/w5500c/z180csio/bin/cpnet12/rdate.com'
+unix2dos -n src/tr.asm bld/w5500c/z180csio/src/tr.asm
+unix2dos: converting file src/tr.asm to file bld/w5500c/z180csio/src/tr.asm in DOS format...
+vcpm mac "tr.asm" '$SZLL'
+D>mac tr.asm $SZLL
+CP/M MACRO ASSEM 2.0
+0558
+01FH USE FACTOR
+END OF ASSEMBLY
+
+vcpm hexcom "tr"
+D>hexcom tr
+HEXCOM	VERS: 3.00
+
+FIRST ADDRESS 0100
+LAST  ADDRESS 0557
+BYTES READ    03EC
+RECORDS WRITTEN 09
+
+
+cp -v --update bld/w5500c/z180csio/src/tr.com bld/w5500c/z180csio/bin/cpnet12/tr.com
+'bld/w5500c/z180csio/src/tr.com' -> 'bld/w5500c/z180csio/bin/cpnet12/tr.com'
+unix2dos -n src/w5500c/wizcfg.asm bld/w5500c/z180csio/src/wizcfg.asm
+unix2dos: converting file src/w5500c/wizcfg.asm to file bld/w5500c/z180csio/src/wizcfg.asm in DOS format...
+vcpm rmac "wizcfg.asm" '$SZLL'
+D>rmac wizcfg.asm $SZLL
+CP/M RMAC ASSEM 1.1
+046A
+029H USE FACTOR
+END OF ASSEMBLY
+
+unix2dos -n src/w5500c/libwiznt.asm bld/w5500c/z180csio/src/libwiznt.asm
+unix2dos: converting file src/w5500c/libwiznt.asm to file bld/w5500c/z180csio/src/libwiznt.asm in DOS format...
+vcpm rmac "libwiznt.asm" '$SZLL'
+D>rmac libwiznt.asm $SZLL
+CP/M RMAC ASSEM 1.1
+0001
+023H USE FACTOR
+END OF ASSEMBLY
+
+vcpm link wizcfg,libwiznt'[oc,nr]'
+D>link wizcfg,libwiznt[oc,nr]
+LINK 1.31
+
+NVBUF    09E1   WIZCFG   0775   WIZCMD   06B1   WIZGET   06E8   
+WIZSET   0706   WIZCLO   0728   SETSOK   073E   SETTCP   074A   
+GKEEP    0757   SKEEP    0765   WIZCF0   0775   CSRAIS   0675   
+CSLOWE   0668   READBY   0696   WRITEB   0682   
+
+ABSOLUTE     0000
+CODE SIZE    0677 (0100-0776)
+DATA SIZE    046B (0777-0BE1)
+COMMON SIZE  0000
+USE FACTOR     0E
+
+cp -v --update bld/w5500c/z180csio/src/wizcfg.com bld/w5500c/z180csio/bin/cpnet12/wizcfg.com
+'bld/w5500c/z180csio/src/wizcfg.com' -> 'bld/w5500c/z180csio/bin/cpnet12/wizcfg.com'
+unix2dos -n src/w5500c/wizdbg.asm bld/w5500c/z180csio/src/wizdbg.asm
+unix2dos: converting file src/w5500c/wizdbg.asm to file bld/w5500c/z180csio/src/wizdbg.asm in DOS format...
+vcpm mac "wizdbg.asm" '$SZLL'
+D>mac wizdbg.asm $SZLL
+CP/M MACRO ASSEM 2.0
+04BB
+020H USE FACTOR
+END OF ASSEMBLY
+
+vcpm hexcom "wizdbg"
+D>hexcom wizdbg
+HEXCOM	VERS: 3.00
+
+FIRST ADDRESS 0100
+LAST  ADDRESS 04BA
+BYTES READ    0393
+RECORDS WRITTEN 08
+
+
+cp -v --update bld/w5500c/z180csio/src/wizdbg.com bld/w5500c/z180csio/bin/cpnet12/wizdbg.com
+'bld/w5500c/z180csio/src/wizdbg.com' -> 'bld/w5500c/z180csio/bin/cpnet12/wizdbg.com'
+cp -v --update dist/ndos.spr bld/w5500c/z180csio/bin/cpnet12/ndos.spr
+'dist/ndos.spr' -> 'bld/w5500c/z180csio/bin/cpnet12/ndos.spr'
+cp -v --update dist/ccp.spr bld/w5500c/z180csio/bin/cpnet12/ccp.spr
+'dist/ccp.spr' -> 'bld/w5500c/z180csio/bin/cpnet12/ccp.spr'
+unix2dos -n src/z180csio/cpnldr-w.asm bld/w5500c/z180csio/src/cpnldr-w.asm
+unix2dos: converting file src/z180csio/cpnldr-w.asm to file bld/w5500c/z180csio/src/cpnldr-w.asm in DOS format...
+vcpm rmac "cpnldr-w.asm" '$SZLL'
+D>rmac cpnldr-w.asm $SZLL
+CP/M RMAC ASSEM 1.1
+02C1
+006H USE FACTOR
+END OF ASSEMBLY
+
+unix2dos -n src/w5500c/libnvram.asm bld/w5500c/z180csio/src/libnvram.asm
+unix2dos: converting file src/w5500c/libnvram.asm to file bld/w5500c/z180csio/src/libnvram.asm in DOS format...
+vcpm rmac "libnvram.asm" '$SZLL'
+D>rmac libnvram.asm $SZLL
+CP/M RMAC ASSEM 1.1
+008A
+01DH USE FACTOR
+END OF ASSEMBLY
+
+unix2dos -n src/libcpnet.asm bld/w5500c/z180csio/src/libcpnet.asm
+unix2dos: converting file src/libcpnet.asm to file bld/w5500c/z180csio/src/libcpnet.asm in DOS format...
+vcpm rmac "libcpnet.asm" '$SZLL'
+D>rmac libcpnet.asm $SZLL
+CP/M RMAC ASSEM 1.1
+0047
+01DH USE FACTOR
+END OF ASSEMBLY
+
+vcpm link cpnldr-w,libwiznt,libnvram,libcpnet'[oc,nr]'
+D>link cpnldr-w,libwiznt,libnvram,libcpnet[oc,nr]
+LINK 1.31
+
+NVBUF    0953   WIZCFG   075D   CPNSET   07E9   WIZCF0   075D   
+WIZCMD   0699   WIZGET   06D0   WIZSET   06EE   WIZCLO   0710   
+SETSOK   0726   SETTCP   0732   GKEEP    073F   SKEEP    074D   
+CSRAIS   065D   CSLOWE   0650   READBY   067E   WRITEB   066A   
+CKSUM3   075F   VCKSUM   077B   SCKSUM   07A8   NVGET    07C4   
+
+ABSOLUTE     0000
+CODE SIZE    0792 (0100-0891)
+DATA SIZE    0309 (0892-0B9A)
+COMMON SIZE  0000
+USE FACTOR     10
+
+cp -v --update bld/w5500c/z180csio/src/cpnldr-w.com bld/w5500c/z180csio/bin/cpnet12/cpnetldr.com
+'bld/w5500c/z180csio/src/cpnldr-w.com' -> 'bld/w5500c/z180csio/bin/cpnet12/cpnetldr.com'
+cp -v --update dist/cpnetsts.com bld/w5500c/z180csio/bin/cpnet12/cpnetsts.com
+'dist/cpnetsts.com' -> 'bld/w5500c/z180csio/bin/cpnet12/cpnetsts.com'
+cp -v --update dist/dskreset.com bld/w5500c/z180csio/bin/cpnet12/dskreset.com
+'dist/dskreset.com' -> 'bld/w5500c/z180csio/bin/cpnet12/dskreset.com'
+cp -v --update dist/endlist.com bld/w5500c/z180csio/bin/cpnet12/endlist.com
+'dist/endlist.com' -> 'bld/w5500c/z180csio/bin/cpnet12/endlist.com'
+cp -v --update dist/local.com bld/w5500c/z180csio/bin/cpnet12/local.com
+'dist/local.com' -> 'bld/w5500c/z180csio/bin/cpnet12/local.com'
+cp -v --update dist/login.com bld/w5500c/z180csio/bin/cpnet12/login.com
+'dist/login.com' -> 'bld/w5500c/z180csio/bin/cpnet12/login.com'
+cp -v --update dist/logoff.com bld/w5500c/z180csio/bin/cpnet12/logoff.com
+'dist/logoff.com' -> 'bld/w5500c/z180csio/bin/cpnet12/logoff.com'
+cp -v --update dist/mail.com bld/w5500c/z180csio/bin/cpnet12/mail.com
+'dist/mail.com' -> 'bld/w5500c/z180csio/bin/cpnet12/mail.com'
+cp -v --update dist/network.com bld/w5500c/z180csio/bin/cpnet12/network.com
+'dist/network.com' -> 'bld/w5500c/z180csio/bin/cpnet12/network.com'
+cp -v --update dist/xsubnet.com bld/w5500c/z180csio/bin/cpnet12/xsubnet.com
+'dist/xsubnet.com' -> 'bld/w5500c/z180csio/bin/cpnet12/xsubnet.com'
+unix2dos -n src/w5500c/snios.asm bld/w5500c/z180csio/src/snios.asm
+unix2dos: converting file src/w5500c/snios.asm to file bld/w5500c/z180csio/src/snios.asm in DOS format...
+vcpm rmac "snios.asm" '$SZLL'
+D>rmac snios.asm $SZLL
+CP/M RMAC ASSEM 1.1
+040C
+024H USE FACTOR
+END OF ASSEMBLY
+
+unix2dos -n src/snios12.asm bld/w5500c/z180csio/src/snios12.asm
+unix2dos: converting file src/snios12.asm to file bld/w5500c/z180csio/src/snios12.asm in DOS format...
+vcpm rmac "snios12.asm" '$SZLL'
+D>rmac snios12.asm $SZLL
+CP/M RMAC ASSEM 1.1
+0018
+01DH USE FACTOR
+END OF ASSEMBLY
+
+vcpm link "snios=snios12,snios[os,nr]"
+D>link snios=snios12,snios[os,nr]
+LINK 1.31
+
+NTWKIN   0285   NTWKST   02A2   CNFTBL   02AD   SNDMSG   02B1   
+RCVMSG   0361   NTWKER   03DF   NTWKBT   03E0   NTWKDN   0407   
+CFGTBL   0018   
+
+ABSOLUTE     0000
+CODE SIZE    0424 (0000-0423)
+DATA SIZE    0000
+COMMON SIZE  0000
+USE FACTOR     08
+
+cp -v --update bld/w5500c/z180csio/src/snios.spr bld/w5500c/z180csio/bin/cpnet12/snios.spr
+'bld/w5500c/z180csio/src/snios.spr' -> 'bld/w5500c/z180csio/bin/cpnet12/snios.spr'
+unix2dos -n src/netdown.asm bld/w5500c/z180csio/src/netdown.asm
+unix2dos: converting file src/netdown.asm to file bld/w5500c/z180csio/src/netdown.asm in DOS format...
+vcpm mac "netdown.asm" '$SZLL'
+D>mac netdown.asm $SZLL
+CP/M MACRO ASSEM 2.0
+0222
+01BH USE FACTOR
+END OF ASSEMBLY
+
+vcpm hexcom "netdown"
+D>hexcom netdown
+HEXCOM	VERS: 3.00
+
+FIRST ADDRESS 0100
+LAST  ADDRESS 01E1
+BYTES READ    00E2
+RECORDS WRITTEN 02
+
+
+cp -v --update bld/w5500c/z180csio/src/netdown.com bld/w5500c/z180csio/bin/cpnet12/netdown.com
+'bld/w5500c/z180csio/src/netdown.com' -> 'bld/w5500c/z180csio/bin/cpnet12/netdown.com'
+cp -v --update bld/w5500c/z180csio/src/netstat.com bld/w5500c/z180csio/bin/cpnet3/netstat.com
+'bld/w5500c/z180csio/src/netstat.com' -> 'bld/w5500c/z180csio/bin/cpnet3/netstat.com'
+cp -v --update bld/w5500c/z180csio/src/srvstat.com bld/w5500c/z180csio/bin/cpnet3/srvstat.com
+'bld/w5500c/z180csio/src/srvstat.com' -> 'bld/w5500c/z180csio/bin/cpnet3/srvstat.com'
+cp -v --update bld/w5500c/z180csio/src/rdate.com bld/w5500c/z180csio/bin/cpnet3/rdate.com
+'bld/w5500c/z180csio/src/rdate.com' -> 'bld/w5500c/z180csio/bin/cpnet3/rdate.com'
+cp -v --update bld/w5500c/z180csio/src/tr.com bld/w5500c/z180csio/bin/cpnet3/tr.com
+'bld/w5500c/z180csio/src/tr.com' -> 'bld/w5500c/z180csio/bin/cpnet3/tr.com'
+cp -v --update bld/w5500c/z180csio/src/wizcfg.com bld/w5500c/z180csio/bin/cpnet3/wizcfg.com
+'bld/w5500c/z180csio/src/wizcfg.com' -> 'bld/w5500c/z180csio/bin/cpnet3/wizcfg.com'
+cp -v --update bld/w5500c/z180csio/src/wizdbg.com bld/w5500c/z180csio/bin/cpnet3/wizdbg.com
+'bld/w5500c/z180csio/src/wizdbg.com' -> 'bld/w5500c/z180csio/bin/cpnet3/wizdbg.com'
+cp -v --update dist/cpnetsts.com bld/w5500c/z180csio/bin/cpnet3/cpnetsts.com
+'dist/cpnetsts.com' -> 'bld/w5500c/z180csio/bin/cpnet3/cpnetsts.com'
+cp -v --update dist/dskreset.com bld/w5500c/z180csio/bin/cpnet3/dskreset.com
+'dist/dskreset.com' -> 'bld/w5500c/z180csio/bin/cpnet3/dskreset.com'
+cp -v --update dist/endlist.com bld/w5500c/z180csio/bin/cpnet3/endlist.com
+'dist/endlist.com' -> 'bld/w5500c/z180csio/bin/cpnet3/endlist.com'
+cp -v --update dist/local.com bld/w5500c/z180csio/bin/cpnet3/local.com
+'dist/local.com' -> 'bld/w5500c/z180csio/bin/cpnet3/local.com'
+cp -v --update dist/login.com bld/w5500c/z180csio/bin/cpnet3/login.com
+'dist/login.com' -> 'bld/w5500c/z180csio/bin/cpnet3/login.com'
+cp -v --update dist/logoff.com bld/w5500c/z180csio/bin/cpnet3/logoff.com
+'dist/logoff.com' -> 'bld/w5500c/z180csio/bin/cpnet3/logoff.com'
+cp -v --update dist/mail.com bld/w5500c/z180csio/bin/cpnet3/mail.com
+'dist/mail.com' -> 'bld/w5500c/z180csio/bin/cpnet3/mail.com'
+cp -v --update dist/network.com bld/w5500c/z180csio/bin/cpnet3/network.com
+'dist/network.com' -> 'bld/w5500c/z180csio/bin/cpnet3/network.com'
+cp -v --update dist/xsubnet.com bld/w5500c/z180csio/bin/cpnet3/xsubnet.com
+'dist/xsubnet.com' -> 'bld/w5500c/z180csio/bin/cpnet3/xsubnet.com'
+unix2dos -n src/ndos3.asm bld/w5500c/z180csio/src/ndos3.asm
+unix2dos: converting file src/ndos3.asm to file bld/w5500c/z180csio/src/ndos3.asm in DOS format...
+vcpm rmac "ndos3.asm" '$SZLL'
+D>rmac ndos3.asm $SZLL
+CP/M RMAC ASSEM 1.1
+0A2E
+02CH USE FACTOR
+END OF ASSEMBLY
+
+unix2dos -n src/z180csio/ndos3wiz.asm bld/w5500c/z180csio/src/ndos3wiz.asm
+unix2dos: converting file src/z180csio/ndos3wiz.asm to file bld/w5500c/z180csio/src/ndos3wiz.asm in DOS format...
+vcpm rmac "ndos3wiz.asm" '$SZLL'
+D>rmac ndos3wiz.asm $SZLL
+CP/M RMAC ASSEM 1.1
+0273
+01DH USE FACTOR
+END OF ASSEMBLY
+
+vcpm link ndos3wiz,libwiznt,libnvram,libcpnet'[oc,nr]'
+D>link ndos3wiz,libwiznt,libnvram,libcpnet[oc,nr]
+LINK 1.31
+
+NVBUF    042B   WIZCFG   0283   CPNSET   030F   WIZCF0   0283   
+WIZCMD   01BF   WIZGET   01F6   WIZSET   0214   WIZCLO   0236   
+SETSOK   024C   SETTCP   0258   GKEEP    0265   SKEEP    0273   
+CSRAIS   0183   CSLOWE   0176   READBY   01A4   WRITEB   0190   
+CKSUM3   0285   VCKSUM   02A1   SCKSUM   02CE   NVGET    02EA   
+
+ABSOLUTE     0000
+CODE SIZE    02B8 (0100-03B7)
+DATA SIZE    02BB (03B8-0672)
+COMMON SIZE  0000
+USE FACTOR     06
+
+vcpm link "ndos3.rsx=ndos3,snios[op,nr]"
+D>link ndos3.rsx=ndos3,snios[op,nr]
+LINK 1.31
+
+NTWKIN   0D9B   NTWKST   0DB8   CNFTBL   0DC3   SNDMSG   0DC7   
+RCVMSG   0E77   NTWKBT   0EF6   NTWKDN   0F1D   CFGTBL   0B2E   
+NTWKER   0EF5   
+
+ABSOLUTE     0000
+CODE SIZE    0E3A (0100-0F39)
+DATA SIZE    0000
+COMMON SIZE  0000
+USE FACTOR     1E
+
+vcpm gencom ndos3.com ndos3.rsx
+D>gencom ndos3.com ndos3.rsx
+
+GENCOM completed.
+
+cp -v --update bld/w5500c/z180csio/src/ndos3.com bld/w5500c/z180csio/bin/cpnet3/ndos3.com
+'bld/w5500c/z180csio/src/ndos3.com' -> 'bld/w5500c/z180csio/bin/cpnet3/ndos3.com'
+unix2dos -n src/ntpdate.asm bld/w5500c/z180csio/src/ntpdate.asm
+unix2dos: converting file src/ntpdate.asm to file bld/w5500c/z180csio/src/ntpdate.asm in DOS format...
+vcpm rmac "ntpdate.asm" '$SZLL'
+D>rmac ntpdate.asm $SZLL
+CP/M RMAC ASSEM 1.1
+03D0
+020H USE FACTOR
+END OF ASSEMBLY
+
+vcpm link "ntpdate=ntpdate,snios[oc,nr]"
+D>link ntpdate=ntpdate,snios[oc,nr]
+LINK 1.31
+
+NTWKIN   073D   NTWKST   075A   CNFTBL   0765   SNDMSG   0769   
+RCVMSG   0819   NTWKER   0897   NTWKBT   0898   NTWKDN   08BF   
+CFGTBL   04D0   
+
+ABSOLUTE     0000
+CODE SIZE    07DC (0100-08DB)
+DATA SIZE    0000
+COMMON SIZE  0000
+USE FACTOR     0B
+
+cp -v --update bld/w5500c/z180csio/src/ntpdate.com bld/w5500c/z180csio/bin/cpnet3/ntpdate.com
+'bld/w5500c/z180csio/src/ntpdate.com' -> 'bld/w5500c/z180csio/bin/cpnet3/ntpdate.com'
+unix2dos -n src/rsxrm.asm bld/w5500c/z180csio/src/rsxrm.asm
+unix2dos: converting file src/rsxrm.asm to file bld/w5500c/z180csio/src/rsxrm.asm in DOS format...
+vcpm mac "rsxrm.asm" '$SZLL'
+D>mac rsxrm.asm $SZLL
+CP/M MACRO ASSEM 2.0
+010F
+000H USE FACTOR
+END OF ASSEMBLY
+
+vcpm hexcom "rsxrm"
+D>hexcom rsxrm
+HEXCOM	VERS: 3.00
+
+FIRST ADDRESS 0100
+LAST  ADDRESS 010E
+BYTES READ    000F
+RECORDS WRITTEN 01
+
+
+cp -v --update bld/w5500c/z180csio/src/rsxrm.com bld/w5500c/z180csio/bin/cpnet3/rsxrm.com
+'bld/w5500c/z180csio/src/rsxrm.com' -> 'bld/w5500c/z180csio/bin/cpnet3/rsxrm.com'
+unix2dos -n src/rsxls.asm bld/w5500c/z180csio/src/rsxls.asm
+unix2dos: converting file src/rsxls.asm to file bld/w5500c/z180csio/src/rsxls.asm in DOS format...
+vcpm mac "rsxls.asm" '$SZLL'
+D>mac rsxls.asm $SZLL
+CP/M MACRO ASSEM 2.0
+0263
+01CH USE FACTOR
+END OF ASSEMBLY
+
+vcpm hexcom "rsxls"
+D>hexcom rsxls
+HEXCOM	VERS: 3.00
+
+FIRST ADDRESS 0100
+LAST  ADDRESS 0222
+BYTES READ    0123
+RECORDS WRITTEN 03
+
+
+cp -v --update bld/w5500c/z180csio/src/rsxls.com bld/w5500c/z180csio/bin/cpnet3/rsxls.com
+'bld/w5500c/z180csio/src/rsxls.com' -> 'bld/w5500c/z180csio/bin/cpnet3/rsxls.com'
