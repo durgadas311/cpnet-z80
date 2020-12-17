@@ -1086,7 +1086,7 @@ check1:
 	dcr	b
 	xra	a
 	ret
-	
+
 
 if (SPIDEV eq H8xSPI)
 ; Get a block of data from NVRAM to 'buf'

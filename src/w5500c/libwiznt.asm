@@ -76,7 +76,7 @@ DISCON	equ	08h
 ; exit  :  a, c = byte reversed
 ; uses  : af, c
 
-	
+
 cmirror:
 	mov	c,a		; a = 76543210
 	rlc
@@ -94,7 +94,7 @@ cmirror:
 	xra	c		; a = 01234567
 	mov	c,a
 	ret
- 
+
 ;Lower the SC130 SD card CS using the GPIO address
 ;
 ;input (H)L = SD CS selector of 0 or 1
@@ -106,7 +106,7 @@ cslower:
 	jrnz	cslower
 
 ;	mov	a,l
-;	ani	01h		;isolate SD CS 0 and 1 (to prevent bad input).    
+;	ani	01h		;isolate SD CS 0 and 1 (to prevent bad input).
 ;	inr	a		;convert input 0/1 to SD1/2 CS
 ;	xri	03h		;invert bits to lower correct I/O bit.
 ;	rlc
@@ -132,7 +132,7 @@ csraise:
 ;Do a write bus cycle to the SD drive, via the CSIO
 ;
 ;input L = byte to write to SD drive
-	
+
 writebyte:
 ;	mov	a,l
 	call	cmirror		; reverse the bits before we busy wait
@@ -147,7 +147,7 @@ writewait:
 	ret
 
 ;Do a read bus cycle to the SD drive, via the CSIO
-;  
+;
 ;output L = byte read from SD drive
 
 readbyte:
@@ -165,7 +165,7 @@ readwait:
 	in0	a,(TRDR)	; read byte
 	jmp	cmirror		; reverse the byte, leave in L and A
 
- 
+
 ;------------------------------------------------------------------------------
 
 
@@ -202,7 +202,7 @@ wc0:
 	mov	a,d
 	call	writebyte	; bsd
 
-	call	readbyte	; data	
+	call	readbyte	; data
 
 	push	psw
 	call	csraise
@@ -231,9 +231,9 @@ wizget:
 
 	pop	de		; restore address
 	pop	b		; retrieve count
-wizgetloop:	
+wizgetloop:
  	call	readbyte 	; data
-	stax	d	
+	stax	d
     	inx	d		; ptr++
    	djnz 	wizgetloop  	; length != 0, go again
 	call	csraise
@@ -249,14 +249,14 @@ wizset:
 	call	cslower
 	xra	a		; hi adr always 0
 	call	writebyte 	; hi adr
-	mov	a,e	
+	mov	a,e
 	call	writebyte 	; lo adr
 	mov	a,d
 	ori	WRITE
 	call	writebyte ; WRITE (4)
 	pop	de		; restore address
 	pop	b		; retrieve count
-wizsetloop:	
+wizsetloop:
     	ldax	d
     	call 	writebyte
     	inx	d		; ptr++

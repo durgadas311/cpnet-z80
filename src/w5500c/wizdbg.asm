@@ -268,16 +268,16 @@ wizget:
 	lhld	off
 	mov	a,l
 	call	writebyte	; addr lo
-	lda	bsb		; 
+	lda	bsb		;
 	call	writebyte
 	lhld    num             ; count into HL
-	lxi	d,buf		; address to save to, DE	
-wizgetloop:	
+	lxi	d,buf		; address to save to, DE
+wizgetloop:
  	call	readbyte 	; data
-	stax	d	
+	stax	d
     	inx	d		; ptr++
         dcx     h               ; count down 1
-        mov     a,h             
+        mov     a,h
         ora     l
         jrnz    wizgetloop
 	call	csraise
@@ -299,12 +299,12 @@ wizset:
 	call	writebyte
 	lhld    num             ; count into HL
 	lxi	d,buf		; data address
-wizsetloop:	
+wizsetloop:
     	ldax	d
     	call 	writebyte
    	inx	d		; ptr++
         dcx 	h               ; count down 1
-        mov     a,h             
+        mov     a,h
         ora     l
         jrnz    wizgetloop
 	call	csraise

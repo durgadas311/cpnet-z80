@@ -100,7 +100,7 @@ totlen:	dw	0
 ; exit  :  a, c = byte reversed
 ; uses  : af, c
 
-	
+
 cmirror:
 	mov	c,a		; a = 76543210
 	rlc
@@ -118,7 +118,7 @@ cmirror:
 	xra	c		; a = 01234567
 	mov	c,a
 	ret
- 
+
 ;Lower the SC130 SD card CS using the GPIO address
 ;
 ;input (H)L = SD CS selector of 0 or 1
@@ -130,7 +130,7 @@ cslower:
 	jrnz	cslower
 
 ;	mov	a,l
-;	ani	01h		;isolate SD CS 0 and 1 (to prevent bad input).    
+;	ani	01h		;isolate SD CS 0 and 1 (to prevent bad input).
 ;	inr	a		;convert input 0/1 to SD1/2 CS
 ;	xri	03h		;invert bits to lower correct I/O bit.
 ;	rlc
@@ -156,7 +156,7 @@ csraise:
 ;Do a write bus cycle to the SD drive, via the CSIO
 ;
 ;input L = byte to write to SD drive
-	
+
 writebyte:
 	call	cmirror		; reverse the bits before we busy wait
 writewait:
@@ -170,7 +170,7 @@ writewait:
 	ret
 
 ;Do a read bus cycle to the SD drive, via the CSIO
-;  
+;
 ;output L = byte read from SD drive
 
 readbyte:
@@ -188,7 +188,7 @@ readwait:
 	in0	a,(TRDR)	; read byte
 	jmp	cmirror		; reverse the byte, leave in C and A
 
- 
+
 ;------------------------------------------------------------------------------
 
 ; call with offset in e, bsb in d, sets write bit
@@ -214,10 +214,10 @@ putwiz1:
 	xra	a
 	call	writebyte	; hi adr byte always 0
 	mov	a,e
-	call	writebyte	
+	call	writebyte
 	setb	2,d		; write
 	mov	a,d
-	call	writebyte	
+	call	writebyte
 	pop	psw
 	call	writebyte	; data
 	call	csraise
@@ -232,7 +232,7 @@ getwiz2:
 	xra	a
 	call	writebyte	; hi adr byte always 0
 	mov	a,e
-	call	writebyte	; lo adr byte 
+	call	writebyte	; lo adr byte
 	res	2,d
 	mov	a,d
 	call	writebyte	; read
@@ -255,7 +255,7 @@ putwiz2:
 	call	writebyte	; lo adr
 	setb	2,d
 	mov	a,d
-	call	writebyte	; write	
+	call	writebyte	; write
 	mov	a,h
 	call	writebyte	; data h to write
 	mov	a,l
@@ -272,10 +272,10 @@ wizcmd:	mov	b,a
 	call	cslower
 	xra	a
 	call	writebyte	; hi adr byte always 0
-	mov	a,e	
+	mov	a,e
 	call	writebyte	; lo adr (sn$cr, 1)
 	mov	a,d
-	call	writebyte	; write	
+	call	writebyte	; write
 	mov	a,b
 	call	writebyte	; command
 	call	csraise
@@ -353,7 +353,7 @@ gs2:	stc	; failed to open
 	ret
 
 ; HL=socket relative pointer (TX_WR)
-; DE=length, 
+; DE=length,
 ; HL=msgptr, addr of destination in chip
 ; txbuf0
 cpyout:
@@ -364,7 +364,7 @@ cpyout:
 	mov	a,l
 	call	writebyte	; addr lo
 	lda	cursok
-	ora	b	
+	ora	b
 	call	writebyte	; bsb
 
         push    de
@@ -375,9 +375,9 @@ co0:   	ldax	d
     	call 	writebyte
     	inx	d		; ptr++
         dcx	h               ; count down 1
-        mov     a,h             
+        mov     a,h
         ora     l
-        jrnz    co0 	
+        jrnz    co0
 co1:	xchg
 	shld	msgptr
 	call	csraise
@@ -394,7 +394,7 @@ cpyin:
 	mov	a,l
 	call	writebyte	; addr lo
 	lda	cursok
-	ora	b	
+	ora	b
 	call	writebyte	; bsb
 
         push    de              ; save count
@@ -403,13 +403,13 @@ cpyin:
 
         pop     hl              ; get count into HL
 ci0:	call	readbyte 	; data
-	stax	d	
+	stax	d
     	inx	d		; ptr++
         dcx	h               ; count down 1
-        mov     a,h             
+        mov     a,h
         ora     l
-        jrnz    ci0 	
-ci1:	xchg                    ; copy updated DE into HL 
+        jrnz    ci0
+ci1:	xchg                    ; copy updated DE into HL
 	shld	msgptr          ; and save it
 	call	csraise
 	ret
@@ -482,8 +482,8 @@ SNDMSG:			; BC = message addr
 	shld	curptr	; store hl in curptr
 	lhld	msglen	; load hl with msglen
 	lbcd	curptr	; load bc with curptr
-	dad	b	; add hl+bc to hl 
-	mvi	e,sn$txwr  ; 
+	dad	b	; add hl+bc to hl
+	mvi	e,sn$txwr  ;
 	call	putwiz2 ; update Socketn tx write pointer
 
 	; send data

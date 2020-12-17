@@ -106,6 +106,7 @@ endif
 	pop	psw
 	ret
 
+; call with data in a, offset in e, bsb in d
 putwiz1:
 	push	psw
 	mvi	a,WZSCS
@@ -358,8 +359,8 @@ CNFTBL:
 
 ;	Send Message on Network
 SNDMSG:			; BC = message addr
-	sbcd	msgptr
-	lixd	msgptr
+	sbcd	msgptr	; store BC addr into msgptr
+	lixd	msgptr	; put message pointer into index register
 	ldx	b,+1	; SID - destination
 	call	getsrv
 	jrc	serr
@@ -373,23 +374,26 @@ SNDMSG:			; BC = message addr
 	aci	0
 	mov	h,a	; HL=msg length
 	shld	msglen
-	mvi	e,sn$txwr
-	call	getwiz2
-	shld	curptr
-	lhld	msglen
-	lbcd	curptr
-	dad	b
-	mvi	e,sn$txwr
-	call	putwiz2
+	mvi	e,sn$txwr ; 0x24, Socketn tx write pointer
+	call	getwiz2	; into hl
+
+	shld	curptr	; store hl in curptr
+	lhld	msglen	; load hl with msglen
+	lbcd	curptr	; load bc with curptr
+	dad	b	; add hl+bc to hl
+	mvi	e,sn$txwr  ;
+	call	putwiz2 ; update Socketn tx write pointer
+
 	; send data
 	lhld	msglen
-	xchg
-	lhld	curptr
-	call	cpyout
+	xchg		; length into DE
+	lhld	curptr	; chip address into HL
+	call	cpyout	; msglen in DE, curptr in HL, socket in A
+
 	lda	cursok
 	ori	sock0
 	mov	d,a
-	mvi	a,SEND
+	mvi	a,SEND  ; send the message
 	call	wizcmd
 	; ignore Sn_SR?
 	mvi	c,00011010b	; SEND_OK, DISCON, or TIMEOUT bit
@@ -469,7 +473,7 @@ rm0:	; D must be socket base...
 	jrz	rm0
 	shld	msglen		; not CP/NET msg len
 	mvi	e,sn$rxrd	; pointer
-	call	getwiz2
+	call	getwiz2	; get rxrd addr
 	shld	curptr
 	lbcd	msglen	; BC=Sn_RX_RSR
 	lhld	totlen
@@ -480,11 +484,11 @@ rm0:	; D must be socket base...
 	lhld	msglen	; BC=Sn_RX_RD, HL=Sn_RX_RSR
 	dad	b	; HL=nxt RD
 	mvi	e,sn$rxrd
-	call	putwiz2
+	call	putwiz2	; write addr to rxrd
 	; DE destroyed...
 	lded	msglen
 	lhld	curptr
-	call	cpyin
+	call	cpyin	; get payload
 	lda	cursok
 	ori	sock0
 	mov	d,a
