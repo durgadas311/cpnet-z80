@@ -39,6 +39,45 @@ The HBA subdirectory typically contains customization variables
 in `config.lib`, and a `chrio.asm` module in the case of
 serial port NICs.
 
+### Recommended git workflow
+
+When starting work, create a side branch to contain the work.
+In these examples, that branch is called "newbranch".
+
+1. Ensure your clone "master" branch is up-to-date
+```
+git remote update
+git fetch origin master
+```
+
+2. Switch to new branch
+```
+git checkout -b newbranch master
+```
+
+Create and test changes on "newbranch", making commits as appropriate/desired.
+
+3. When changes are ready to "publish", resync "master" with remote:
+```
+git remote update
+git fetch origin master
+```
+
+4. Rebase the new branch onto the latest "master"
+```
+git checkout newbranch
+git rebase master
+```
+There is a possibility of merge conflicts at this point, those will
+need to be fixed and "git rebase --continue" run in order to finish
+the rebase.
+
+5. Confirm that all is well, then push new "master"
+```
+git push origin master
+```
+
+
 ## Supporting new hardware
 
 Ideally, adding support for new hardware requires adding
@@ -84,3 +123,4 @@ CPNLDR|=|Custom CPNETLDR.COM to build. Default is original "dist/cpnetldr.com".
 ### See also
 
 [Build](BUILD.md) instructions.
+
