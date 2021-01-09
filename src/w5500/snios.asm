@@ -509,6 +509,9 @@ rm0:	; D must be socket base...
 	dad	d	; subtract what we already have
 	jrnc	rerr	; something is wrong, if still neg
 	shld	totlen
+	lda	cursok	; must restore D=socket BSB
+	ori	sock0
+	mov	d,a
 	mov	a,h
 rm1:	ora	l
 	jnz	rm0
