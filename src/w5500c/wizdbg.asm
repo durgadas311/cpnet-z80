@@ -212,10 +212,32 @@ cmirror:
 	mov	c,a
 	ret
 
+cntr0:	db	0
+
+;
+; According to Z180 spec, CSIO may still be transmitting last bit when
+; TE goes to 0. We need to wait about 1 bit time before making any
+; changes to CSIO or /CS. The slowest divisor is 1280, so 800 cycles
+; (dly32) is enough to ensure we get beyond the SC edge.
+dly32:	push	h
+	lxi	h,800/20
+dly0:	dcx	h	; 4
+	mov	a,h	; 4
+	ora	l	; 4
+	jrnz	dly0	; 8
+	pop	h	;=20  
+	ret
+
+;Lower the SC130 SD card CS using the GPIO address
 cslower:
 	in0	a,(CNTR)	;check the CSIO is not enabled
-	ani	CNTRTE+CNTRRE
+	tsti	CNTRTE+CNTRRE
 	jrnz	cslower
+	sta	cntr0
+	ani	00000111b	; already at fastest speed?
+	cnz	dly32		; if not, delay
+	xra	a		; set fastest speed
+	out0	a,(CNTR)
 	mvi	a,0f7h
 	out0	a,(IOSYSTEM)
 	ret
@@ -227,6 +249,8 @@ csraise:
 
 	mvi	a,0ffh		;SC130 SC1 CS is on Bit 2 and SC126 SC2 CS is on Bit 3, raise both.
 	out0	a,(IOSYSTEM)
+	lda	cntr0
+	out0	a,(CNTR)
 	ret
 
 writebyte:
