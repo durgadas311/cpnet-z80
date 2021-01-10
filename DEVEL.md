@@ -43,6 +43,9 @@ serial port NICs.
 
 When starting work, create a side branch to contain the work.
 In these examples, that branch is called "newbranch".
+These examples are for using the git commandline interface.
+Other interfaces to git should have equivalent commands,
+or even provide a direct commandline interface.
 
 1. Ensure your clone "master" branch is up-to-date
 ```
@@ -59,8 +62,10 @@ Create and test changes on "newbranch", making commits as appropriate/desired.
 This branch may be provided to others, for testing and review, by pushing
 it to origin: "git push origin newbranch", making it visible on github and
 available to others clones.
+If the branch has been pushed to origin, any developer may perform the
+following to publish it to "master".
 
-3. When changes are ready to publish, resync "master" with remote:
+3. When changes are ready to publish, resync "master" with remote.
 ```
 git remote update
 git fetch origin master
