@@ -47,37 +47,38 @@ These examples are for using the git commandline interface.
 Other interfaces to git should have equivalent commands,
 or even provide a direct commandline interface.
 
-1. Ensure your clone "master" branch is up-to-date
+1. Ensure your clone "master" branch is up-to-date.
 ```
-git remote update
 git fetch origin master
 ```
 
-2. Switch to new branch
+2. Switch to new branch.
 ```
 git checkout -b newbranch master
 ```
 
 Create and test changes on "newbranch", making commits as appropriate/desired.
 This branch may be provided to others, for testing and review, by pushing
-it to origin: "git push origin newbranch", making it visible on github and
+it to origin: `git push origin newbranch`, making it visible on github and
 available to others clones.
+
 If the branch has been pushed to origin, any developer may perform the
-following to publish it to "master".
+following steps to publish it to "master". The following steps would
+orinarily be done all at once, to minimize the chance of other
+changes being made to "master" remotely and causing interference.
 
 3. When changes are ready to publish, resync "master" with remote.
 ```
-git remote update
 git fetch origin master
 ```
 
-4. Rebase the new branch onto the latest "master"
+4. Rebase the new branch onto the latest "master".
 ```
 git checkout newbranch
 git rebase master
 ```
 There is a possibility of merge conflicts at this point, those will
-need to be fixed and "git rebase --continue" run in order to finish
+need to be fixed and `git rebase --continue` run in order to finish
 the rebase.
 
 5. Do a fast-forward merge with "master"
@@ -86,9 +87,22 @@ git checkout master
 git merge newbranch
 ```
 
-6. Confirm that all is well, then push new "master"
+6. Confirm that all is well, then push new "master" to github.
 ```
 git push origin master
+```
+
+7. Branches may be deleted, at such point in the future where
+they are determined unneeded, using:
+```
+git branch -D newbranch
+```
+
+8. Branches on (that were pushed to) github may be deleted from
+a clone using the following command. Use caution, as this may be the last
+copy of the branch and it's deletion may impact others.
+```
+git push origin :newbranch
 ```
 
 
