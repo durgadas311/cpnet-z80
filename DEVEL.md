@@ -56,8 +56,11 @@ git checkout -b newbranch master
 ```
 
 Create and test changes on "newbranch", making commits as appropriate/desired.
+This branch may be provided to others, for testing and review, by pushing
+it to origin: "git push origin newbranch", making it visible on github and
+available to others clones.
 
-3. When changes are ready to "publish", resync "master" with remote:
+3. When changes are ready to publish, resync "master" with remote:
 ```
 git remote update
 git fetch origin master
@@ -72,7 +75,13 @@ There is a possibility of merge conflicts at this point, those will
 need to be fixed and "git rebase --continue" run in order to finish
 the rebase.
 
-5. Confirm that all is well, then push new "master"
+5. Do a fast-forward merge with "master"
+```
+git checkout master
+git merge newbranch
+```
+
+6. Confirm that all is well, then push new "master"
 ```
 git push origin master
 ```
