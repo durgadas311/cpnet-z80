@@ -1,9 +1,7 @@
-; SNIOS plug-in for Noberto's H89 USB/SERIAL board,
-; Specifically, the FT245R chip.
-; http://koyado.com/Heathkit/H-89_USB_Serial.html
+; SNIOS plug-in Dual/SIO board for S100 buss.
+; Specifically, the USB1232 chip on 8255 PIO.
 ;
-; Modified to support the Dual/SIO board for S100 
-; buss.  See www.s100computers.com et.al for further
+; See www.s100computers.com et.al for further
 ; details.
 ;
 ; NOTE:  this could be merged back into the original
@@ -31,7 +29,7 @@ sendb0:
 check:
 	; program the pio port (just in case)
 	mvi	a,AinBout8255cfg	; program the PIO so
-	out	PortCtrl_8255		; we can read status bits.
+	out	PortCtrl8255		; we can read status bits.
 	; do check for sane hardware...
 	lxi	h,0
 ; on my s100 machine the cpu runs at 8mhz

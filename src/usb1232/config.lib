@@ -1,8 +1,7 @@
 ; Modified from the FT245R driver to support
-; DLP-USB1232H
-; FT245R mode FIFO-to-USB module
+; DLP-USB1232H on 8255 PIO.
 ;
-PortCtrl_8255 equ	0ABh
+PortCtrl8255 equ	0ABh
 AinBout8255cfg equ	10011000b
 USBPORT	equ	0ACh	; port on Dual SIO S100 board interface
 STSPORT	equ	0AAH	; Status port	
