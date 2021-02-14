@@ -23,6 +23,9 @@ rdymsg:	db	'Ready for RESET/power-off',cr,lf
 	db	'(press any key to resume CP/NET)$'
 xsnios:	db	'Not a recognized SNIOS',cr,lf,'$'
 
+xconp:	dw	0	; CON: word in network config table
+xcon:	db	0	; saved CON: byte
+
 start:	lxi	sp,stack
 	mvi	c,getver
 	call	bdos
@@ -35,6 +38,9 @@ start:	lxi	sp,stack
 	mvi	c,netcfg
 	call	bdos
 	push	h
+	lxi	d,34	; CON: word offset
+	dad	d
+	shld	xconp
 	popix
 	; check for at least 6 JMPs...
 	ldx	c,-3
@@ -60,6 +66,12 @@ start:	lxi	sp,stack
 	cpi	0c3h	;JMP?
 	jnz	notcom
 	; looks OK, call NTWKDN...
+	; but first, make sure CON: is local...
+	lhld	xconp	;
+	mov	a,m	;
+	sta	xcon	;
+	ani	01111111b
+	mov	m,a	;
 	ldx	l,-2
 	ldx	h,-1
 	call	callhl
@@ -69,6 +81,9 @@ start:	lxi	sp,stack
 	mvi	c,conin
 	call	bdos
 	; if we return here, just resume...
+	lhld	xconp	; restore CON:
+	lda	xcon	;
+	mov	m,a	;
 	jmp	cpm
 
 callhl:	pchl
