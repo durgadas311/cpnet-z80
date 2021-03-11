@@ -1,0 +1,3 @@
+LIBS += z180.lib
+SNDEPS += chrio.rel
+SNLINK = snios,chrio

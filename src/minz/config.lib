@@ -1,0 +1,31 @@
+; The MinZ-U supports CTS on ASCI1, so we can use that port
+; and leave CON: on ASCI0.
+
+; Z80S180 ASCI1 registers
+ctla	equ	01h
+ctlb	equ	03h	; for CTS
+stat	equ	05h
+tdr	equ	07h
+rdr	equ	09h
+asxt	equ	13h
+astcl	equ	1ch
+astch	equ	1dh
+; For ASCI1 RTS control
+trdr	equ	0bh
+cntr	equ	0ah
+
+; For 115200 baud with 16.667MHz clock,
+; overclocked to 33.333MHz phy.
+
+; TODO: don't re-config these?
+xtal	equ	10010111b	; 1X, "low noise drives"
+ovrclk	equ	1
+
+; Settings for 115200 baud at 33.334MHz
+asc$ss	equ	00000$000b	; SS0-2, divide by 1 (*)
+asc$ps	equ	00$0$00000b	; PS=0: divide by 10 (*)
+asc$dr	equ	0000$0$000b	; DR=0: divide by 16
+asc$brg	equ	0000$1$000b	; BRG=1: PS/SS0-2 ignored
+astc	equ	0007h		; non-zero means set value
+				; baud = phi / (2 * (2 + astc))
+				; 33.334MHz/18/16 = 115743 baud (~115200)

@@ -10,6 +10,7 @@ NIC | HBA | Description
 [serial](SERIAL.md) | [ft245r](FT245R.md) | Serial over FT245R USB module, simple protocol
 [serial](SERIAL.md) | [USB1232](USB1232H.md) | Serial over USB1232H module, simple protocol
 [serial](SERIAL.md) | [rc-siob](RC-SIOB.md) | Serial support via FTDI cable for SC131
+[ser-dri](SER-DRI.md) | [minz](MINZ.md) | Serial over MinZ-U ASCI1 port, DRI protocol
 [ser-dri](SER-DRI.md) | [ft245r](FT245R.md) | Serial over FT245R USB module, DRI protocol
 [ser-dri](SER-DRI.md) | [ins8250](INS8250.md) | DRI serial protocol over INS8250-like UART
 [ser-dri](SER-DRI.md) | [kaypro](KAYPRO.md) | DRI serial protocol on Kaypro Z80-SIO UART
