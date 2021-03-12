@@ -1,4 +1,4 @@
-; NETBOOT I/O module for Z180 ASCI0
+; SNIOS I/O module for Z180 ASCI1 on MinZ-U
 
 	maclib	z180
 	maclib	config
@@ -21,13 +21,20 @@ if astc
 	out0	l,astcl
 	out0	h,astch
 endif
-	mvi	a,01101100b	; enable Rx/Tx, RTS on, EFR
+	mvi	a,01101100b	; enable Rx/Tx, CKA1D off, EFR
 	out0	a,ctla
 	; ASCI1 on MinZ uses CSIO for RTS...
 	xra	a	; low = active (on)
 	out0	a,trdr
 	mvi	a,10h
 	out0	a,cntr	; shift out new /RTS value
+if 1	; why is delay needed?
+	lxi	b,0100h
+ck0:	dcx	b
+	mov	a,b
+	ora	c
+	jrnz	ck0
+endif
 	xra	a
 	ret
 
