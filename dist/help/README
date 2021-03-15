@@ -1,0 +1,8 @@
+This version of HELP.COM works on any version of CP/M (2.0 and greater).
+
+Rename the desired topic collection to HELP.HLP on the target system.
+
+cpm2net.hlp	CP/M 2.2 basic system with CP/NET 1.2
+cpnet12.hlp	CP/NET 1.2 help only
+cpm3net.hlp	CP/M 3 basic system with CP/NET 3
+cpnet3.hlp	CP/NET 3 help only
