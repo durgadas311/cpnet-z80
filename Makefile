@@ -66,7 +66,7 @@ CPNET = cpnetsts.com dskreset.com endlist.com local.com \
 CPN2 = ndos.spr ccp.spr cpnetldr.com $(CPNET)
 CPN3 = $(CPNET)
 XCPN3 = ntpdate.com rsxrm.com rsxls.com
-XCPN2 = netdown.com
+XCPN2 = netdown.com cpnboot.com
 
 -include src/$(NIC)/makevars
 -include src/$(HBA)/makevars
@@ -110,6 +110,9 @@ $(BLD_SRC)/%.asm: src/$(NIC)/%.asm
 $(BLD_SRC)/%.asm: src/$(HBA)/%.asm
 	$(CRLF2) $^ $@
 
+$(BLD_SRC)/platform.asm:
+	/bin/echo -e " public platfm\r\nplatfm: db '$(NIC):$(HBA)$$'\r\n end\r" >$@
+
 %/wizcfg.com: $(addprefix %/,$(WZCDEPS))
 	$(VCPM) link $(WZCLINK)'[oc,nr]'
 
@@ -126,6 +129,9 @@ $(BLD_SRC)/%.asm: src/$(HBA)/%.asm
 
 %/ntpdate.com: %/ntpdate.rel $(addprefix %/,$(SNDEPS))
 	$(VCPM) link "ntpdate=ntpdate,$(SNLINK)[oc,nr]"
+
+%/cpnboot.com: %/cpnboot.rel %/platform.rel $(addprefix %/,$(SNDEPS))
+	$(VCPM) link "cpnboot=cpnboot,platform,$(SNLINK)[oc,nr]"
 
 $(BLD_BIN2)/cpnetldr.com: $(CPNLDR)
 	cp -v --update $^ $@
