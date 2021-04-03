@@ -1,3 +1,3 @@
-TARGETS += wizcfg.com wizdbg.com
+TARGETS += wizcfg.com wizdbg.com wiztest.com
 WZCDEPS = wizcfg.rel libwiznt.rel
 WZCLINK = wizcfg,libwiznt
