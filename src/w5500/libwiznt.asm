@@ -208,6 +208,10 @@ if (SPIDEV eq H8xSPI)
 	call	vcksum
 	stc
 	rnz
+else
+	stc
+	ret
+endif
 wizcf0:
 	lxix	nvbuf
 	lxi	h,nvbuf+GAR
@@ -245,10 +249,6 @@ rest1:	lxi	b,32
 	pop	b
 	djnz	rest0
 	xra	a
-else
-wizcf0:
-	stc
-endif
 	ret
 
 	dseg
