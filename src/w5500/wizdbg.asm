@@ -30,8 +30,9 @@ usage:	db	'Usage: WIZDBG {G bsb off num}',CR,LF
 	db	'       off = Offset within BSB, hex',CR,LF
 	db	'       num = Number of bytes to GET, dec',CR,LF
 	db	'       dat = Byte(s) to SET, hex',CR,LF,'$'
-nocpn:	db	'CP/NET is running. Stop it first',CR,LF,'$'
+nocpn:	db	'CP/NET is running. Stop it first or use F',CR,LF,'$'
 cpnet:	db	0
+force:	db	0
 
 start:
 	sspd	usrstk
@@ -59,20 +60,28 @@ start:
 	inx	h
 pars0:
 	mov	a,m
+	cpi	'F'
+	jz	pars4
 	cpi	' '
 	jnz	pars1
-	inx	h
+pars3:	inx	h
 	djnz	pars0
 	jmp	help
+pars4:	sta	force
+	jmp	pars3
 
 pars1:
 	cpi	'G'
 	jz	pars2
 	cpi	'S'
 	jnz	help
+	lda	force
+	ora	a
+	jnz	pars5
 	lda	cpnet
 	ora	a
 	jnz	nocpnt
+pars5:
 	mvi	a,'S'
 pars2:
 	sta	com
