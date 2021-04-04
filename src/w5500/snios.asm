@@ -523,12 +523,23 @@ rerr:	lda	CFGTBL
 err:	mvi	a,0ffh
 NTWKER:	ret
 
+; D=socket bsb
+; may destroy A,C
+clear:	push	d
+	mvi	e,sn$ir
+	call	getwiz1
+	ani	00001010b	; only DISCON and TIMEOUT are errors
+	cnz	putwiz1	; only if something to clear
+	pop	d
+	ret
+
 NTWKBT:	; NETWORK WARM START
 	lda	CFGTBL
 	ani	active
 	jz	NTWKIN	; will end up back here, on success
 ntwkbt0:
 	; load socket server IDs based on WIZ550io current config
+	; clear error status of any found.
 	mvi	b,nsocks
 	lxi	d,(sock0 shl 8) + sn$prt
 	lxi	h,srvtbl
@@ -539,6 +550,8 @@ nb1:
 	cpi	31h
 	mvi	a,0ffh
 	jrnz	nb0
+	; socket is configured for CP/NET
+	call	clear
 	mov	a,l	; server ID
 nb0:	pop	h
 	mov	m,a
