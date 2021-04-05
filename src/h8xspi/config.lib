@@ -1,12 +1,14 @@
 ; H8xSPI board for H8/H89 systems.
+; Uses WIZ850io https://www.wiznet.io/product-item/wiz850io/
 
 SPIDEV	equ	H8xSPI
 
 spi	equ	40h	; base port of H8-WIZx50io SPI interface
 
-spi$wr	equ	spi+0
-spi$rd	equ	spi+0
-spi$ctl	equ	spi+1
+spi$wr	equ	spi+0	; write and transfer
+spi$rd	equ	spi+0	; read and transfer
+spi$ctl	equ	spi+1	; control port
 
-WZSCS	equ	0001b	; ctl port for WizNET /CS
+WZSCS	equ	0001b	; ctl port val for WizNET /CS
+WZRST	equ	0000b	; /RST connected to system /RESET
 

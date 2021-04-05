@@ -1,13 +1,14 @@
 ; MT011_SPI_WIZNET board for RC2014-Z80 systems.
+; Uses "Ethernet FeatherWing" http://adafru.it/3201
 
 SPIDEV	equ	MT011
 
 spi	equ	5ch	; base port of MT011_SPI_WIZNET SPI interface
 			; base port can also be 1ch to match MarkT's s/w
 
-spi$wr	equ	spi+0
-spi$rd	equ	spi+1
-spi$ctl	equ	spi+2
+spi$wr	equ	spi+0	; write and transfer
+spi$rd	equ	spi+1	; read and transfer
+spi$ctl	equ	spi+2	; control port (outputs)
 
-WZSCS	equ	1000b	; ctl port for WizNET /CS
-WZRST	equ	0001b	; TODO: implement RESET?
+WZSCS	equ	1000b	; ctl port val for WizNET /CS
+WZRST	equ	0001b	; Not attached inside FeatherWing module
