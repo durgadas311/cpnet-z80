@@ -1,0 +1,8 @@
+TARGETS += nvram.com
+XCPN2 += cpnboot.com
+ND3DEP = ndos3wiz.com
+WZCDEPS += libnvram.rel
+WZCLINK = wizcfg,libwiznt,libnvram
+CPNLDR = $(BLD_SRC)/cpnldr-w.com
+CPBDEPS = libwiznt.rel libnvram.rel
+CPBLINK = platform,libwiznt,libnvram

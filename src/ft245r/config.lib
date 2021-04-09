@@ -1,5 +1,7 @@
 ; FT245R FIFO-to-USB module
 ;
+NVRAM	equ	0	; no NVRAM or special config needed
+
 USBPORT	equ	0d8h	; port on H8/H89 interface
 STSPORT	equ	USBPORT+2
 ; Status port bits:

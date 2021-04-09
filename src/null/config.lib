@@ -1,0 +1,1 @@
+NVRAM	equ	0	; no NVRAM or special config needed

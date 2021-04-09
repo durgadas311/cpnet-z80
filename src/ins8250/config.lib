@@ -1,5 +1,7 @@
 ; INS8250 UART, and compatibles (16550, 16C2550, ...)
 ;
+NVRAM	equ	0	; no NVRAM or special config needed
+
 SERPORT	equ	0e0h	; "lp" port on H8/H89 interface
 STSPORT	equ	SERPORT+5
 

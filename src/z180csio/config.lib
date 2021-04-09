@@ -1,3 +1,4 @@
 ; Z180 CSIO on SC126 systems.
+NVRAM	equ	0	; no NVRAM or special config needed
 
 SPIDEV	equ	Z180CSIO

@@ -1,5 +1,7 @@
 ; Z80-SIO UART and WD1943 BAUD generator.
 ;
+NVRAM	equ	0	; no NVRAM or special config needed
+
 SERPORT	equ	004h	; "serial data" port on Kaypro
 CMDPORT	equ	SERPORT+2
 BAUDA	equ	000h	; For Serial Data

@@ -1,5 +1,6 @@
 ; Config details for virtual CP/NET device.
 ; a generic, fictitious, hardware emulation
+NVRAM	equ	0	; no NVRAM or special config needed
 
 ; I/O port base address
 VCPN	equ	038h

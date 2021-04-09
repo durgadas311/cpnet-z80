@@ -1,6 +1,8 @@
 ; Modified from the FT245R driver to support
 ; DLP-USB1232H on 8255 PIO.
 ;
+NVRAM	equ	0	; no NVRAM or special config needed
+
 PortCtrl8255 equ	0ABh
 AinBout8255cfg equ	10011000b
 USBPORT	equ	0ACh	; port on Dual SIO S100 board interface

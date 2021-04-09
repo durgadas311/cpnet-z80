@@ -2,6 +2,9 @@
 ; Uses "Ethernet FeatherWing" http://adafru.it/3201
 
 SPIDEV	equ	MT011
+NVRAM	equ	1	; true - has NVRAM
+NVWAIT	equ	0	; no WIP needed
+NVERA	equ	0	; has no erase commands
 
 spi	equ	5ch	; base port of MT011_SPI_WIZNET SPI interface
 			; base port can also be 1ch to match MarkT's s/w
@@ -10,5 +13,10 @@ spi$wr	equ	spi+0	; write and transfer
 spi$rd	equ	spi+1	; read and transfer
 spi$ctl	equ	spi+2	; control port (outputs)
 
+CS0	equ	00001000b
+CS1	equ	00010000b
+CS2	equ	00100000b
+
 WZSCS	equ	1000b	; ctl port val for WizNET /CS
 WZRST	equ	0001b	; Not attached inside FeatherWing module
+NVSCS	equ	CS1

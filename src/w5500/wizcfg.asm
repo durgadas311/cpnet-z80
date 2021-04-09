@@ -15,7 +15,7 @@
 	extrn	wizcfg, wizcmd, wizget, wizset, wizclose, setsok, settcp
 	extrn	gkeep,skeep
 
-if (SPIDEV eq H8xSPI)
+if NVRAM
 	extrn	cksum32, vcksum, scksum, nvget
 endif
 
@@ -50,9 +50,7 @@ usage:	db	'WIZCFG version 1.4',CR,LF
 	db	'       WIZCFG M macadr',CR,LF
 	db	'       WIZCFG N cid',CR,LF
 	db	'       WIZCFG {0..7} sid ipadr port [keep]',CR,LF
-if (SPIDEV eq MT011)
-	db	'Sets network config in W5500',CR,LF
-else
+if NVRAM
 	db	'       WIZCFG R',CR,LF
 	db	'       WIZCFG L {A:..P:,LST:}',CR,LF
 	db	'       WIZCFG T {A:..P:}={A:..P:}[sid]',CR,LF
@@ -61,6 +59,8 @@ else
 	db	'Sets network config in NVRAM',CR,LF
 	db	'Prefix cmd with W to set WIZ850io directly',CR,LF
 	db	'R cmd sets WIZ850io from NVRAM',CR,LF
+else
+	db	'Sets network config in W5500',CR,LF
 endif
 	db	'$'
 done:	db	'Set',CR,LF,'$'
@@ -116,7 +116,7 @@ pars0:
 	jmp	show
 
 pars1:
-if (SPIDEV eq H8xSPI)
+if NVRAM
 	cpi	'W'
 	jnz	notw
 	sta	direct
@@ -160,7 +160,7 @@ endif
 	jz	pars3
 	cpi 	'N'
 	jz	pars4
-if (SPIDEV eq H8xSPI)
+if NVRAM
 	cpi 	'L'
 	jz	locdv
 	cpi 	'X'
@@ -214,7 +214,7 @@ nokp0:	mov	a,e
 	sta	nskkp
 nokp:
 ; Now prepare to update socket config
-if (SPIDEV eq H8xSPI)
+if NVRAM
 	lda	direct
 	ora	a
 	jz	nvsok
@@ -277,7 +277,7 @@ ntopn:	lxi	h,newsok
 	mvi	b,soklen-SnPORT
 	jmp	setit
 
-if (SPIDEV eq H8xSPI)
+if NVRAM
 nvsok:
 	lda	sokn
 	sui	'0'	; 00000sss
@@ -335,7 +335,7 @@ pars2:
 	mvi	b,4
 	; got it...
 setit0:
-if (SPIDEV eq H8xSPI)
+if NVRAM
 	lda	direct
 	ora	a
 	jnz	setit
@@ -357,7 +357,7 @@ setit:
 	;call	bdos
 	jmp	exit
 
-if (SPIDEV eq H8xSPI)
+if NVRAM
 nvshow:	; show config from NVRAM
 	lxix	nvbuf
 	lxi	h,0
@@ -587,7 +587,7 @@ getsokn:
 	ret
 
 show:
-if (SPIDEV eq H8xSPI)
+if NVRAM
 	lda	direct
 	ora	a
 	jz	nvshow
@@ -1085,7 +1085,7 @@ check1:
 	ret
 
 
-if (SPIDEV eq H8xSPI)
+if NVRAM
 ; Get a block of data from NVRAM to 'buf'
 ; Verify checksum, init block if needed.
 nvgetb:
@@ -1102,7 +1102,7 @@ nvgetb:
 	mvi	m,0ffh
 	mov	d,h
 	mov	e,l
-	inx	h
+	inx	d
 	lxi	b,511
 	ldir
 	ret
@@ -1122,15 +1122,6 @@ mslp1:	dcx	h
 	jrnz	mslp0
 	pop	h
 	ret
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; These defines should be in a common file...
-spi	equ	40h
-
-spi?dat	equ	spi+0
-spi?ctl	equ	spi+1
-spi?sts	equ	spi+1
-
-NVSCS	equ	10b	; H8xSPI SCS for NVRAM
 
 ; Standard W5500 register offsets
 GAR	equ	1	; offset of GAR, etc.
@@ -1192,36 +1183,38 @@ WIP	equ	00000001b
 nvset:
 	push	h
 	lxi	h,nvbuf	; HL = buf, TOS = nvadr
-	mvi	c,spi?ctl
+	mvi	c,spi$ctl
 nvset0:
+if NVWAIT
 	; wait for WIP=0...
 	mvi	a,NVSCS
 	outp	a
 	mvi	a,RDSR
-	out	spi?dat
-	in	spi?dat	; prime pump
-	in	spi?dat	; status register
+	out	spi$wr
+	in	spi$rd	; prime pump
+	in	spi$rd	; status register
 	push	psw
 	xra	a
 	outp	a	; not SCS
 	pop	psw
 	ani	WIP
 	jrnz	nvset0
+endif
 	mvi	a,NVSCS
 	outp	a
 	mvi	a,WREN
-	out	spi?dat
+	out	spi$wr
 	xra	a
 	outp	a	; not SCS
 	mvi	a,NVSCS
 	outp	a
 	mvi	a,NVWR
-	out	spi?dat
+	out	spi$wr
 	xthl	; get nvadr
 	mov	a,h
-	out	spi?dat
+	out	spi$wr
 	mov	a,l
-	out	spi?dat
+	out	spi$wr
 	lxi	b,128
 	dad	b	; update nvadr
 	xchg
@@ -1230,9 +1223,9 @@ nvset0:
 	xchg
 	xthl	; get buf adr
 	mov	b,c	; B = 128
-	mvi	c,spi?dat
+	mvi	c,spi$wr
 	outir		; HL = next page in 'buf'
-	mvi	c,spi?ctl
+	mvi	c,spi$ctl
 	xra	a
 	outp	a	; not SCS
 ;	mvi	a,50
@@ -1332,7 +1325,7 @@ shlst1:	mvi	c,print
 stack:	ds	0
 usrstk:	dw	0
 
-if (SPIDEV eq H8xSPI)
+if NVRAM
 direct:	db	0
 endif
 cpnet:	db	0

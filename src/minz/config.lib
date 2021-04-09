@@ -1,6 +1,8 @@
 ; The MinZ-U supports CTS on ASCI1, so we can use that port
 ; and leave CON: on ASCI0.
 
+NVRAM	equ	0	; no NVRAM or special config needed
+
 ; Z80S180 ASCI1 registers
 ctla	equ	01h
 ctlb	equ	03h	; for CTS

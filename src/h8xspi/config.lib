@@ -2,6 +2,9 @@
 ; Uses WIZ850io https://www.wiznet.io/product-item/wiz850io/
 
 SPIDEV	equ	H8xSPI
+NVRAM	equ	1	; true - has NVRAM
+NVWAIT	equ	1	; requires WIP wait
+NVERA	equ	1	; support erase commands
 
 spi	equ	40h	; base port of H8-WIZx50io SPI interface
 
@@ -11,4 +14,4 @@ spi$ctl	equ	spi+1	; control port
 
 WZSCS	equ	0001b	; ctl port val for WizNET /CS
 WZRST	equ	0000b	; /RST connected to system /RESET
-
+NVSCS	equ	0010b

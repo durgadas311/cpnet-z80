@@ -1,6 +1,5 @@
 ; Options for DRI SNIOS reference implementation.
 ; 
-
 always$retry	equ	0	; match cpnet-0.8/P112 setting
 timeout$retries equ 100		; timeout a max of 100 times
 max$retries equ	10		; send message max of 10 times

@@ -66,7 +66,7 @@ CPNET = cpnetsts.com dskreset.com endlist.com local.com \
 CPN2 = ndos.spr ccp.spr cpnetldr.com $(CPNET)
 CPN3 = $(CPNET)
 XCPN3 = ntpdate.com rsxrm.com rsxls.com
-XCPN2 = netdown.com cpnboot.com
+XCPN2 = netdown.com
 
 -include src/$(NIC)/makevars
 -include src/$(HBA)/makevars
@@ -127,8 +127,8 @@ $(BLD_SRC)/%.asm: src/$(HBA)/%.asm
 %/ntpdate.com: %/ntpdate.rel $(addprefix %/,$(SNDEPS))
 	$(VCPM) link "ntpdate=ntpdate,$(SNLINK)[oc,nr]"
 
-%/cpnboot.com: %/cpnboot.rel %/platform.rel $(addprefix %/,$(SNDEPS))
-	$(VCPM) link "cpnboot=cpnboot,platform,$(SNLINK)[oc,nr]"
+%/cpnboot.com: %/cpnboot.rel %/platform.rel $(addprefix %/,$(CPBDEPS)) $(addprefix %/,$(SNDEPS))
+	$(VCPM) link "cpnboot=cpnboot,$(CPBLINK),$(SNLINK)[oc,nr]"
 
 $(BLD_BIN2)/cpnetldr.com: $(CPNLDR)
 	cp -v --update $^ $@

@@ -1,9 +1,14 @@
 ; Runs under CP/M, boots using network and the "loader" style
 
 	maclib	z80
+	maclib	config
 
 	extrn	NTWKIN,NTWKST,CNFTBL,SNDMSG,RCVMSG,NTWKER,NTWKBT,NTWKDN,CFGTBL
 	extrn	platfm	; platform descriptive string, $-terminated
+if NVRAM
+	extrn	wizcfg
+	public	nvbuf
+endif
 
 false	equ	0
 true	equ	not false
@@ -77,6 +82,10 @@ nocpn:	; CP/NET not running, OK to boot
 	lxi	d,signon
 	mvi	c,fprnt
 	call	bdos
+if NVRAM
+	call	wizcfg
+	cc	nocfg
+endif
 	jmp	boot
 
 error:
@@ -254,6 +263,47 @@ boot:
 	lxix	newmap
 	bitx	7,+0	; any new maps?
 	jrnz	nm1
+if NVRAM
+	lda	nverr
+	ora	a
+	jrnz	nonv
+	; translate cfgtbl template into maps...
+	lxix	nvbuf+288	; cfgtbl template
+	mvi	b,16	; 16 drives
+	mvi	c,0	; start at A:
+	lda	boot$server
+	mov	e,a
+nv0:	inxix
+	inxix
+	ldx	a,+0
+	cpi	0ffh
+	jrz	nv1
+	mov	d,a
+	mov	a,e
+	cmpx	+1	; same server?
+	jrnz	nv1
+	mov	m,d
+	inx	h
+	mov	m,c
+	inx	h
+nv1:	inr	c
+	djnz	nv0
+	inxix	; skip CON:
+	inxix
+	ldx	a,+0
+	cpi	0ffh
+	jrz	nm0
+	mov	d,a
+	mov	a,e
+	cmpx	+1	; same server?
+	jrnz	nm0
+	mov	m,d
+	inx	h
+	mvi	m,17	; LST: device number
+	inx	h
+	jr	nm0
+nonv:
+endif
 	lxix	defmap	; else use defaults
 nm1:	ldx	a,+0
 	ora	a
@@ -425,6 +475,16 @@ print:	push	h
 	pop	h
 	ret
 
+if NVRAM
+nocfg:	mvi	a,1
+	sta	nverr
+	lxi	d,ncfg
+	jmp	print
+
+ncfg:	db	'NVRAM not configured',CR,LF,'$'
+nverr:	db	0
+endif
+
 ; variables to network boot CP/NOS
 	dseg
 boot$server	ds	1
@@ -434,6 +494,10 @@ dma:		ds	2
 msgbuf:		ds	5+256
 		ds	256
 nbstk:		ds	0
+
+if NVRAM
+nvbuf:		ds	512
+endif
 
 newmap:		ds	0
 

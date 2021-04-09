@@ -7,7 +7,7 @@
 
 	; Caller must supply 'nvbuf'
 	extrn	nvbuf
-if (SPIDEV eq H8xSPI)
+if NVRAM
 	; Requires linking with NVRAM.REL, for 'wizcfg'...
 	extrn	nvget, vcksum
 endif
@@ -199,7 +199,7 @@ skeep:	ora	a
 ; Buffer is 'nvbuf' (512 bytes)
 ; Return: CY if no config
 wizcfg:
-if (SPIDEV eq H8xSPI)
+if NVRAM
 	lxix	nvbuf
 	lxi	h,0
 	lxi	d,512
