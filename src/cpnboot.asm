@@ -93,6 +93,7 @@ syntax:
 	lxi	h,netsyn
 	jr	err0
 
+; Usage: CPNBOOT [sid|map...] [tag]
 signon:	db	' Network Loader',CR,LF,'$'
 cpnet:	db	CR,LF,BEL,'CP/NET is already running',CR,LF,'$'
 nocpm3:	db	CR,LF,BEL,'Not intended for CP/M 3',CR,LF,'$'
@@ -105,7 +106,116 @@ defmap:
 	db	80h,0	; A:=A:
 	db	80h,17	; LST:=0
 	db	0
-	; TODO: allow customization of maps
+
+; Parse SID or maps (A:=B:, LST:=0)
+; Returns HL=tag (or end of line), CY on error
+parse:	lxi	h,cmdlin+1	; now it is NUL terminated
+	lxiy	newmap
+par0:	mviy	0,+0	; terminate current map list entry
+	call	token
+	rz	; HL=end of args
+	bit	1,b	; ZR=sid
+	jrnz	par1
+	push	d	; next token start...
+	push	h
+	xchg	; DE=token
+	call	getaddr
+	mov	a,l
+	sta	boot$server
+	pop	h	; discard
+	pop	h	; next token start
+	jr	par0
+par1:	bit	0,b	; NZ=map
+	rz	; must be tag, HL=string begin
+	; strict format, either A:=B: or LST:=0
+	push	h
+	popix
+	mvi	a,':'
+	cmpx	+1
+	jrnz	par2	; might be LST:
+	cmpx	+4
+	jrnz	parerr
+	ldx	a,+0	; local drive
+	sui	'A'
+	jrc	parerr
+	cpi	16
+	jrnc	parerr
+	mov	c,a	; local device (0-15)
+	ldx	a,+3	; remote drive
+	sui	'A'
+	jrc	parerr
+	cpi	16
+	jrnc	parerr
+	ori	80h
+	mov	b,a	; remote device (0-15) and flag
+par4:
+	sty	b,+0	; remote device (0-15) and flag
+	sty	c,+1	; local device (0-15)
+	inxiy
+	inxiy
+	xchg		; HL=next token start
+	jr	par0
+par2:	; might be LST: (A=':')
+	cmpx	+3
+	jrnz	parerr
+	ldx	a,+0
+	cpi	'L'
+	jrnz	parerr
+	ldx	a,+1
+	cpi	'S'
+	jrnz	parerr
+	ldx	a,+2
+	cpi	'T'
+	jrnz	parerr
+	ldx	a,+4	; remote list number
+	call	hexcon
+	jrc	parerr
+	ori	80h
+	mov	b,a
+	mvi	c,17	; load LST: device number
+	jr	par4
+
+parerr:	stc
+	ret
+
+; find token, HL=cur line ptr (should point to blank)
+; Returns HL=start, DE=end, B=flags, A=0/ZR if none left
+token:	call	skipb
+	ora	a
+	rz	; HL=end of args
+	push	h
+	call	skipnb
+	xchg
+	pop	h
+	ori	1	; anything non-zero
+	ret
+
+; skip blank chars
+skipb:	mov	a,m
+	cpi	' '
+	rnz
+	inx	h
+	jr	skipb
+
+; skip non-blank chars (skip to next blank)
+; Returns B=flags (bits: 0=mapping, 1=not hex)
+skipnb:	mvi	b,0	; flags
+snb0:	mov	a,m
+	ora	a
+	rz
+	cpi	' '
+	rz
+	cpi	'='
+	jrnz	snb1
+	setb	0,b	; must be mapping
+snb1:	bit	1,b
+	jrnz	snb2
+	call	hexcon	; destroys A (maybe)
+	jrnc	snb2
+	setb	1,b	; not valid hex
+snb2:	inx	h
+	jr	snb0
+	
 boot:
 	; make certain line is NUL-terminated.
 	lxi	h,cmdlin
@@ -115,19 +225,14 @@ boot:
 	dad	b
 	mvi	m,0
 
-	lxi	d,cmdlin+1
-bn7:	call	getaddr ;get server ID, ignore extra MSDs
+	xra	a	; default SID 00
+	sta	boot$server
+	call	parse
 	jc	syntax	; error if invalid
-	bit	7,b	;test for no entry
-	mvi	a,0
-	jrnz	bn8	;use 00
-	mov	a,l
-bn8:	sta	boot$server
-	push	d	; save line pointer
-	mvi	a,0ffh	; we don't know yet...
-	sta	CFGTBL+1
-	call	NTWKIN	; trashes msgbuf...
-	pop	d
+	; HL=tag (or NUL)
+	push	h	; save line pointer
+	call	NTWKIN
+	pop	d	; tag or NUL
 	ora	a
 	jnz	error
 	mvi	a,-1
@@ -142,7 +247,10 @@ bn8:	sta	boot$server
 	lda	bdos+2
 	mov	m,a	; BDOS page
 	inx	h
-	lxix	defmap
+	lxix	newmap
+	bitx	7,+0	; any new maps?
+	jrnz	nm1
+	lxix	defmap	; else use defaults
 nm1:	ldx	a,+0
 	ora	a
 	jrz	nm0
@@ -322,5 +430,7 @@ dma:		ds	2
 msgbuf:		ds	5+256
 		ds	256
 nbstk:		ds	0
+
+newmap:		ds	0
 
 	end

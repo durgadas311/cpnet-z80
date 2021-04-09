@@ -110,9 +110,6 @@ $(BLD_SRC)/%.asm: src/$(NIC)/%.asm
 $(BLD_SRC)/%.asm: src/$(HBA)/%.asm
 	$(CRLF2) $^ $@
 
-$(BLD_SRC)/platform.asm:
-	/bin/echo -e " public platfm\r\nplatfm: db '$(NIC):$(HBA)$$'\r\n end\r" >$@
-
 %/wizcfg.com: $(addprefix %/,$(WZCDEPS))
 	$(VCPM) link $(WZCLINK)'[oc,nr]'
 
