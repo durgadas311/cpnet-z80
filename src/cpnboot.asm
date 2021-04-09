@@ -80,7 +80,7 @@ nocpn:	; CP/NET not running, OK to boot
 	jmp	boot
 
 error:
-	lxi	h,neterr
+	lxi	d,neterr
 err0:
 	mvi	c,fprnt
 	call	bdos
@@ -90,7 +90,7 @@ err0:
 	jmp	retcpm
 
 syntax:
-	lxi	h,netsyn
+	lxi	d,netsyn
 	jr	err0
 
 ; Usage: CPNBOOT [sid|map...] [tag]
@@ -116,14 +116,18 @@ par0:	mviy	0,+0	; terminate current map list entry
 	rz	; HL=end of args
 	bit	1,b	; ZR=sid
 	jrnz	par1
+	; parse SID and store it
 	push	d	; next token start...
 	push	h
 	xchg	; DE=token
 	call	getaddr
+	mov	a,h
+	ora	a
 	mov	a,l
 	sta	boot$server
 	pop	h	; discard
 	pop	h	; next token start
+	jrnz	parerr	; if not 00-FF
 	jr	par0
 par1:	bit	0,b	; NZ=map
 	rz	; must be tag, HL=string begin
@@ -155,7 +159,7 @@ par4:
 	inxiy
 	xchg		; HL=next token start
 	jr	par0
-par2:	; might be LST: (A=':')
+par2:	; might be LST:=X (A=':')
 	cmpx	+3
 	jrnz	parerr
 	ldx	a,+0
@@ -167,7 +171,7 @@ par2:	; might be LST: (A=':')
 	ldx	a,+2
 	cpi	'T'
 	jrnz	parerr
-	ldx	a,+4	; remote list number
+	ldx	a,+5	; remote list number
 	call	hexcon
 	jrc	parerr
 	ori	80h
