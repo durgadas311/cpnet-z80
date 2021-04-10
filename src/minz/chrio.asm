@@ -8,19 +8,34 @@
 	cseg
 
 check:	; validate existence of port, also initialize
+	mvi	a,0ffh	; high = inactive (off) during init
+	out0	a,trdr
+	mvi	a,10h
+	out0	a,cntr	; shift out new /RTS value
 	mvi	a,00010100b	; disable Rx/Tx for init
 	out0	a,ctla
-	mvi	a,00000000b+asc$ps+asc$dr
-	out0	a,ctlb
 	mvi	a,00000100b	; need CTS1E=1...
 	out0	a,stat
-	mvi	a,01100110b+asc$brg
+	lda	004fh	; CPU speed stored here
+	cpi	36
+	jrz	ck2
+	; 33.333MHz, 115200 baud TCR to ~115400 baud
+	mvi	a,00000000b+asc$ps+asc$dr
+	out0	a,ctlb
+	mvi	a,00000000b+asc$brg
 	out0	a,asxt
 if astc
 	lxi	h,astc
 	out0	l,astcl
 	out0	h,astch
 endif
+	jr	ck3
+ck2:	; 36.864MHz uses "standard" dividers to 230800 baud
+	mvi	a,00000000b+fst$brg
+	out0	a,asxt
+	mvi	a,00000000b+fst$ps+fst$dr+fst$ss
+	out0	a,ctlb
+ck3:
 	mvi	a,01101100b	; enable Rx/Tx, CKA1D off, EFR
 	out0	a,ctla
 	; ASCI1 on MinZ uses CSIO for RTS...

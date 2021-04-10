@@ -27,3 +27,10 @@ asc$brg	equ	0000$1$000b	; BRG=1: PS/SS0-2 ignored
 astc	equ	0007h		; non-zero means set value
 				; baud = phi / (2 * (2 + astc))
 				; 33.334MHz/18/16 = 115743 baud (~115200)
+
+; For 230800 baud with 18.432MHz clock,
+; overclocked to 36.864MHz phy.
+fst$ss	equ	00000$000b	; SS0-2, divide by 1
+fst$ps	equ	00$0$00000b	; PS=0: divide by 10
+fst$dr	equ	0000$0$000b	; DR=0: divide by 16
+fst$brg	equ	0000$0$000b	; BRG=0: PS/SS0-2 valid
