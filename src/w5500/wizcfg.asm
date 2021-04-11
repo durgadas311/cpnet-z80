@@ -1108,6 +1108,7 @@ nvgetb:
 	ret
 endif
 
+if 0
 ; NOTE: this delay varies with CPU clock speed.
 msleep:
 	push	h
@@ -1122,6 +1123,7 @@ mslp1:	dcx	h
 	jrnz	mslp0
 	pop	h
 	ret
+endif
 
 ; Standard W5500 register offsets
 GAR	equ	1	; offset of GAR, etc.
@@ -1228,8 +1230,10 @@ endif
 	mvi	c,spi$ctl
 	xra	a
 	outp	a	; not SCS
+if 0
 ;	mvi	a,50
 ;	call	msleep	; wait for WIP to go "1"?
+endif
 	mov	a,e
 	ora	d
 	jrnz	nvset0
