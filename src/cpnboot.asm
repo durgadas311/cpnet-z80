@@ -3,12 +3,13 @@
 	maclib	z80
 	maclib	config
 
-	extrn	NTWKIN,NTWKST,CNFTBL,SNDMSG,RCVMSG,NTWKER,NTWKBT,NTWKDN,CFGTBL
 	extrn	platfm	; platform descriptive string, $-terminated
 if NVRAM
 	extrn	wizcfg
 	public	nvbuf
 endif
+	extrn	netboot,unboot
+	public	ldmsg,srvid
 
 false	equ	0
 true	equ	not false
@@ -41,17 +42,6 @@ SID	equ	2
 FNC	equ	3
 SIZ	equ	4
 DAT	equ	5
-
-; relative locations in cpnos (.sys) image
-memtop	equ	0	; top of memory, 00 = 64K
-comlen	equ	1	; common length
-bnktop	equ	2	; banked top (not used)
-bnklen	equ	3	; banked length (00)
-entry	equ	4	; entry point of OS
-cfgtab	equ	6	; CP/NET cfgtbl
-org0	equ	16	; not used(?)
-ldmsg	equ	128	; load map/message ('$' terminated)
-recs	equ	256	; records to load, top-down
 
 ; Usage: CPNBOOT [nid [args...]]
 
@@ -93,9 +83,7 @@ error:
 err0:
 	mvi	c,fprnt
 	call	bdos
-	lda	init
-	ora	a
-	cnz	NTWKDN
+	call	unboot
 	jmp	retcpm
 
 syntax:
@@ -109,7 +97,6 @@ nocpm3:	db	CR,LF,BEL,'Not intended for CP/M 3',CR,LF,'$'
 netsyn:	db	CR,LF,BEL,'Command syntax error',CR,LF,'$'
 neterr:	db	CR,LF,BEL,'Network boot error',CR,LF,'$'
 newline: db	CR,LF,'$'
-init:	db	0
 
 defmap:
 	db	80h,0	; A:=A:
@@ -133,7 +120,7 @@ par0:	mviy	0,+0	; terminate current map list entry
 	mov	a,h
 	ora	a
 	mov	a,l
-	sta	boot$server
+	sta	srvid
 	pop	h	; discard
 	pop	h	; next token start
 	jrnz	parerr	; if not 00-FF
@@ -239,17 +226,11 @@ boot:
 	mvi	m,0
 
 	xra	a	; default SID 00
-	sta	boot$server
+	sta	srvid
 	call	parse
 	jc	syntax	; error if invalid
 	; HL=tag (or NUL)
-	push	h	; save line pointer
-	call	NTWKIN
-	pop	d	; tag or NUL
-	ora	a
-	jnz	error
-	mvi	a,-1
-	sta	init
+	xchg	; line ptr to DE
 
 	lxi	h,msgbuf+DAT
 	mvi	b,2	; always two bytes
@@ -271,7 +252,7 @@ if NVRAM
 	lxix	nvbuf+288	; cfgtbl template
 	mvi	b,16	; 16 drives
 	mvi	c,0	; start at A:
-	lda	boot$server
+	lda	srvid
 	mov	e,a
 nv0:	inxix
 	inxix
@@ -345,66 +326,14 @@ bn2:	mvi	m,0	; NUL term
 	mov	m,a
 	mvi	a,2	; FNC=2 is loader boot style
 	sta	msgbuf+FNC
-loop:
-	lda	boot$server
-	sta	msgbuf+DID
-	lda	CFGTBL+1
-	sta	msgbuf+SID
-	mvi	a,0b0h
-	sta	msgbuf+FMT
-	call	netsr	; send request, receive response
-	jc	error	; network error
-	lda	msgbuf+FMT
-	cpi	0b1h
-	jnz	error	; invalid response
-	lda	msgbuf+FNC
-	ora	a
-	jz	error	; NAK
-	dcr	a
-	jrz	ldtxt
-	dcr	a
-	jrz	stdma
-	dcr	a
-	jrz	load
-	dcr	a
-	jnz	error	; unsupported function
-	; done - execute boot code
+	lxi	h,msgbuf
+	call	netboot
+	jc	error
+	; HL = start address
+	push	h
 	call	crlf
-	lhld	msgbuf+DAT
-	pchl	; jump to code...
-load:	lhld	dma
-	xchg
-	lxi	h,msgbuf+DAT
-	lxi	b,128
-	ldir
-	xchg
-	shld	dma
-netack:
-	xra	a
-	sta	msgbuf+FNC
-	sta	msgbuf+SIZ
-	jr	loop
-stdma:
-	lhld	msgbuf+DAT
-	shld	dma
-	jr	netack
-ldtxt:
-	call	crlf
-	lxi	d,msgbuf+DAT
-	call	print
-	jr	netack
-
-netsr:
-	lxi	b,msgbuf
-	call	SNDMSG
-	ora	a
-	jrnz	netsre
-	lxi	b,msgbuf
-	call	RCVMSG
-	ora	a
-	rz
-netsre:	stc
-	ret
+	pop	h
+	pchl
 
 ; Get next character from NUL-terminated line buffer (DE).
 char:	ldax	d
@@ -465,6 +394,7 @@ crlf:	push	d
 	pop	d
 	ret
 
+; DE='$'-terminated message
 print:	push	h
 	push	d
 	push	b
@@ -474,6 +404,11 @@ print:	push	h
 	pop	d
 	pop	h
 	ret
+
+ldmsg:	push	h
+	call	crlf
+	pop	d
+	jr	print
 
 if NVRAM
 nocfg:	mvi	a,1
@@ -487,10 +422,7 @@ endif
 
 ; variables to network boot CP/NOS
 	dseg
-boot$server	ds	1
-retry$count:	ds	1
-msg$adr:	ds	2
-dma:		ds	2
+srvid:		ds	1
 msgbuf:		ds	5+256
 		ds	256
 nbstk:		ds	0

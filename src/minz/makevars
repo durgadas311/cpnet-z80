@@ -3,4 +3,4 @@ SNDEPS += chrio.rel
 SNLINK = snios,chrio
 XCPN2 += cpnboot.com
 CPBDEPS =
-CPBLINK = platform
+CPBLINK =

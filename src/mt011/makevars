@@ -5,4 +5,4 @@ WZCDEPS += libnvram.rel
 WZCLINK = wizcfg,libwiznt,libnvram
 CPNLDR = $(BLD_SRC)/cpnldr-w.com
 CPBDEPS = libwiznt.rel libnvram.rel
-CPBLINK = platform,libwiznt,libnvram
+CPBLINK = ,libwiznt,libnvram

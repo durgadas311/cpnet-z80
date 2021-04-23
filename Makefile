@@ -127,8 +127,8 @@ $(BLD_SRC)/%.asm: src/$(HBA)/%.asm
 %/ntpdate.com: %/ntpdate.rel $(addprefix %/,$(SNDEPS))
 	$(VCPM) link "ntpdate=ntpdate,$(SNLINK)[oc,nr]"
 
-%/cpnboot.com: %/cpnboot.rel %/platform.rel $(addprefix %/,$(CPBDEPS)) $(addprefix %/,$(SNDEPS))
-	$(VCPM) link "cpnboot=cpnboot,$(CPBLINK),$(SNLINK)[oc,nr]"
+%/cpnboot.com: %/cpnboot.rel %/netboot.rel %/platform.rel $(addprefix %/,$(CPBDEPS)) $(addprefix %/,$(SNDEPS))
+	$(VCPM) link "cpnboot=cpnboot,netboot,platform$(CPBLINK),$(SNLINK)[oc,nr]"
 
 $(BLD_BIN2)/cpnetldr.com: $(CPNLDR)
 	cp -v --update $^ $@
