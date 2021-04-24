@@ -8,7 +8,7 @@ if NVRAM
 	extrn	wizcfg
 	public	nvbuf
 endif
-	extrn	netboot,unboot
+	extrn	netboot
 	public	ldmsg,srvid
 
 false	equ	0
@@ -83,7 +83,6 @@ error:
 err0:
 	mvi	c,fprnt
 	call	bdos
-	call	unboot
 	jmp	retcpm
 
 syntax:

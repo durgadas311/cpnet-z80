@@ -2,7 +2,7 @@
 
 	maclib	z80
 
-	public	netboot,unboot
+	public	netboot
 	; from caller
 	extrn	ldmsg,srvid
 	; from linked SNIOS
@@ -23,13 +23,11 @@ DAT	equ	5
 
 	cseg
 
-error:	stc
-	ret
-
-unboot:	lda	init
+error:	lda	init
 	ora	a
-	rz
-	jmp	NTWKDN
+	cnz	NTWKDN
+	stc
+	ret
 
 ; Called with HL=msgbuf, filled out for first message (boot request)
 ; FNC, SIZ, and DAT... must be valid
