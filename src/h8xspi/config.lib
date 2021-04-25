@@ -12,6 +12,12 @@ spi$wr	equ	spi+0	; write and transfer
 spi$rd	equ	spi+0	; read and transfer
 spi$ctl	equ	spi+1	; control port
 
-WZSCS	equ	0001b	; ctl port val for WizNET /CS
+CS0	equ	00000001b
+CS1	equ	00000010b
+CS2	equ	00000100b
+CS3	equ	00001000b
+
+WZSCS	equ	CS0	; ctl port val for WizNET /CS
 WZRST	equ	0000b	; /RST connected to system /RESET
-NVSCS	equ	0010b
+NVSCS	equ	CS1
+ANVSCS	equ	0	; no alternate on H8xSPI

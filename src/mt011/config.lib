@@ -16,7 +16,9 @@ spi$ctl	equ	spi+2	; control port (outputs)
 CS0	equ	00001000b
 CS1	equ	00010000b
 CS2	equ	00100000b
+CS3	equ	0	; not available on MT011
 
-WZSCS	equ	1000b	; ctl port val for WizNET /CS
+WZSCS	equ	CS0	; ctl port val for WizNET /CS
 WZRST	equ	0001b	; Not attached inside FeatherWing module
 NVSCS	equ	CS1
+ANVSCS	equ	CS2	; alternate location

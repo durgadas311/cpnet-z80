@@ -25,7 +25,7 @@ LF	equ	10
 
 cpm	equ	0
 bdos	equ	5
-cmd	equ	0080h
+cmdlin	equ	0080h
 
 conin	equ	1
 print	equ	9
@@ -35,12 +35,17 @@ getver	equ	12
 
 	jmp	start
 
+cstbl:	db	CS0,CS1,CS2,CS3	; some might be '0' = N/A
+scs:	db	NVSCS
+
 usage:	db	'Usage: NVRAM R adr len',CR,LF
 	db	'       NVRAM W adr val...',CR,LF
 if NVERA
 	db	'       NVRAM CE',CR,LF
 	db	'       NVRAM SE adr',CR,LF
-	db	'       NVRAM PE adr',CR,LF,'$'
+	db	'       NVRAM PE adr',CR,LF
+;	db	'Command may be prefixed with '0'..'3' for /CS',CR,LF
+	db	'$'
 
 cemsg:	db	'Erase Entire Chip$'
 semsg:	db	'Erase Sector $'
@@ -56,22 +61,39 @@ endif
 start:
 	sspd	usrstk
 	lxi	sp,stack
-	lda	cmd
+	lda	cmdlin
 	ora	a
 	jz	help
 
-	lxi	h,cmd
+	lxi	h,cmdlin
 	mov	b,m
 	inx	h
 pars0:
 	mov	a,m
 	cpi	' '
 	jnz	pars1
-	inx	h
+pars0a:	inx	h
 	djnz	pars0
 	jmp	help
 
+selcs:	push	h
+	sui	'0'
+	mov	e,a
+	mvi	d,0
+	lxi	h,cstbl
+	dad	d
+	mov	a,m
+	ora	a
+	jz	help
+	sta	scs
+	pop	h
+	jr	pars0a
+
 pars1:
+	cpi	'0'
+	jc	help
+	cpi	'3'+1
+	jrc	selcs
 	cpi 	'R'
 	jz	pars2
 	cpi 	'W'
@@ -255,7 +277,7 @@ help:
 if NVWAIT
 ; Waits for WIP == 0
 nvwwip:
-	mvi	a,NVSCS
+	lda	scs
 	out	spi$ctl
 	mvi	a,RDSR
 	out	spi$wr
@@ -274,13 +296,13 @@ endif
 ; A = command, B==0 if no address in 'adr'
 nvcmd:
 	push	psw
-	mvi	a,NVSCS
+	lda	scs
 	out	spi$ctl
 	mvi	a,WREN
 	out	spi$wr
 	xra	a	; not SCS
 	out	spi$ctl
-	mvi	a,NVSCS
+	lda	scs
 	out	spi$ctl
 	pop	psw	; command
 	out	spi$wr
@@ -297,7 +319,7 @@ nvcmd0:	xra	a
 	ret
 
 nvget:
-	mvi	a,NVSCS
+	lda	scs
 	out	spi$ctl
 	mvi	a,READ
 	out	spi$wr
@@ -326,13 +348,13 @@ nvget0:	inir	; B = 0 after
 nvset:
 	; TODO: wait for WIP=0...
 	; Also, could span two pages...
-	mvi	a,NVSCS
+	lda	scs
 	out	spi$ctl
 	mvi	a,WREN
 	out	spi$wr
 	xra	a	; not SCS
 	out	spi$ctl
-	mvi	a,NVSCS
+	lda	scs
 	out	spi$ctl
 	mvi	a,WRITE
 	out	spi$wr
