@@ -20,4 +20,3 @@ CS3	equ	00001000b
 WZSCS	equ	CS0	; ctl port val for WizNET /CS
 WZRST	equ	0000b	; /RST connected to system /RESET
 NVSCS	equ	CS1
-ANVSCS	equ	0	; no alternate on H8xSPI
