@@ -12,6 +12,8 @@ bdos	equ	5
 conin	equ	1
 print	equ	9
 getver	equ	12
+; CP/M 3 only
+callrsx	equ	60
 ; NDOS functions
 netcfg	equ	69
 
@@ -22,6 +24,7 @@ nocpn	db	'Requires CP/NET 1.2',cr,lf,'$'
 rdymsg:	db	'Ready for RESET/power-off',cr,lf
 	db	'(press any key to resume CP/NET)$'
 xsnios:	db	'Not a recognized SNIOS',cr,lf,'$'
+norsx:	db	'No NDOS3 RSX or not removable',cr,lf,'$'
 
 xconp:	dw	0	; CON: word in network config table
 xcon:	db	0	; saved CON: byte
@@ -34,7 +37,7 @@ start:	lxi	sp,stack
 	jz	notnet
 	mov	a,l
 	cpi	30h
-	jnc	notnet
+	jnc	cpnet3
 	mvi	c,netcfg
 	call	bdos
 	push	h
@@ -98,6 +101,23 @@ notcom:	lxi	d,xsnios
 	mvi	c,print
 	call	bdos
 	jmp	cpm
+
+cpnet3:	; CP/M 3 - use "RSXRM NDOS3"
+	lxi	d,rsxpb
+	mvi	c,callrsx
+	call	bdos
+	ora	a
+	jz	cpm
+	lxi	d,norsx
+	mvi	c,print
+	call	bdos
+	jmp	cpm
+
+rsxpb:	db	113	; "remove" - local extension
+	db	1	; one param, name of RSX
+	dw	ndos3	; param1: name of RSX
+
+ndos3:	db	'NDOS3   '
 
 	ds	64
 stack:	ds	0

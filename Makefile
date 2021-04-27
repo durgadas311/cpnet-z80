@@ -65,7 +65,7 @@ CPNET = cpnetsts.com dskreset.com endlist.com local.com \
 	login.com logoff.com mail.com network.com xsubnet.com
 CPN2 = ndos.spr ccp.spr cpnetldr.com $(CPNET)
 CPN3 = $(CPNET)
-XCPN3 = ntpdate.com rsxrm.com rsxls.com
+XCPN3 = ntpdate.com rsxrm.com rsxls.com netdown.com
 XCPN2 = netdown.com
 
 -include src/$(NIC)/makevars
