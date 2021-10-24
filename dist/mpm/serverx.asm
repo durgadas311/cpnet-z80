@@ -26,6 +26,10 @@ wrndf	equ	34
 freef	equ	39
 defpwdf	equ	106
 
+; CP/NET function numbers
+loginf	equ	64
+netend	equ	76	; end of CP/NET reserved
+
 ; XDOS function numbers
 openqf	equ	135
 readqf	equ	137
@@ -47,6 +51,21 @@ Q$PTR	equ	0
 Q$MSG	equ	2
 Q$NAME	equ	4	; 8 bytes long
 
+; CP/NET message buffer (MSGBUF) layout
+FMT	equ	0	; 00 for requests, 01 for responses
+DID	equ	1	; Dest node ID (target)
+SID	equ	2	; Source node ID (sender)
+FNC	equ	3	; BDOS/NDOS function number
+SIZ	equ	4	; payload length, -1 (00 means 1 byte)
+DAT	equ	5	; start of payload
+
+; NOTE: CP/NET "compatability attributes" are kept in
+; the server process descriptor "PD extent high byte",
+; at offset 29 in PD.
+P$DCNT	equ	23	; offset of DCNT,SEARCHL,SEARCHA in PD
+P$EXT	equ	28	; offset of "PD EXTENT" in PD
+P$ATTR	equ	P$EXT+1	; CP/NET compat attrs in PD
+
 ; some macros to simplify shared code.
 HEXASCII macro	; convert 0..F in A to ASCII hex digit
 	local	?1,?2
@@ -65,11 +84,12 @@ SRVNUM	macro	?o	; get srvno and convert to ASCII hex
 	HEXASCII
 	endm
 
-; Each SERVRxPR process keeps the following data on it's stack:
-;
+; Each SERVRxPR process keeps it's local data on it's stack.
+; A template of that data is shown between '?base' and 'stack0'.
 ;
 ; References to stack data must take into account the current
-; stack depth.
+; stack depth. Each push/pop must be accounted for to compute
+; the correct offset to use when referencing stack variables.
 
 	cseg
 ; RSP link - "call bdos" address
@@ -147,19 +167,23 @@ stack0:	ds	0	; extended stack
 	db	0,0ch,0,2,4,0c4h	; serial number
 
 ; Template for network message queue (input)
-qtmplt:	db	'NtwrkQIx'	; 'x' replaced by 0..F
+qtmplt:	db	'NtwrkQIx'	; 'x' replaced by 0..F, also 'O' for "NtwrkQOx"
 
-srvcfg:	dw	0
-maxcon:	db	0
-spoolf:	db	0
+srvcfg:	dw	0	; CP/NET Server Config table, from NetWrkIF
+maxcon:	db	0	; max num requesters allowed (logged in)
+spoolf:	db	0	; flag to indicate spoolq is valid
 
+; command tail used for spooling a file
 texcmd:	db	'.TEX[D',0dh,0
 
+spoolfcb:	; template spool file FCB (not actually used here)
 tmpdrv:	db	1,'xxSPOOLF','TEX',0,0,0,0
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	db	0,0,0,0
 
-spoolq:	db	0,0,0,0,'SPOOLQ  '
+; UQCB for the spooler, in present.
+spoolq:	dw	0,0
+	db	'SPOOLQ  '
 
 ; Masks for drives A-P
 drvmsk:	dw	1111111111111110b	; A:
@@ -179,10 +203,9 @@ drvmsk:	dw	1111111111111110b	; A:
 	dw	1011111111111111b	; O:
 	dw	0111111111111111b	; P:
 
-	; what is this for?
-	db	0,0,0,0,0,0,0,0,0,0,0
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	; what is this for? (64 bytes)
+	dw	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	dw	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
 ; FNC handler op codes...
 fnctab:	db	0	; 00
@@ -280,6 +303,8 @@ fncptr:	dw	neterr	; 0
 	dw	cmpatr	; 15 - set compat attr
 	dw	stdfcb	; 16 - std FCB functions
 
+; 16-bit bit-wise AND of DE with (HL)
+; Returns DE=result, HL incremented once, A=D
 andM:	mov	a,m
 	ana	e
 	mov	e,a
@@ -346,13 +371,13 @@ val0:	xchg
 	inx	h	; SID
 	inx	h	; FNC
 	mov	a,m
-	sui	64	; LOGIN
+	sui	loginf	; LOGIN
 	rz		;
 	mov	a,m
 	cpi	100
 	jc	val1
 	sui	50
-	mov	m,a	; 100.. => 50..
+	mov	m,a	; fold 100.. => 50..
 val1:	push	h
 	dcx	h
 	mov	c,m	; SID
@@ -364,7 +389,7 @@ val1:	push	h
 	ret
 
 val2:	mov	a,m
-	cpi	76	; valid FNC range?
+	cpi	netend	; valid FNC range?
 	jnc	val3
 	xra	a
 	ret
@@ -401,14 +426,19 @@ mult1:	xchg
 	ret
 
 ; Perform a BIOS call...
-biosv:	mov	h,m
-	xchg
-	lhld	cpm+1
+; C=BIOS vector page address (00=warm boot)
+; A=value for C (param) in call to BIOS
+; HL=location of device number
+; This is a bit convoluted for MP/M, and may
+; have dependencies on specific BIOS/XIOS implementations.
+biosv:	mov	h,m	; pick up value for D (dev num)
+	xchg		; D=device number
+	lhld	cpm+1	; address of "direct BIOS jump vectors" #0
 	inx	h
 	inx	h
-	mov	h,m
-	mov	l,c
-	mov	c,a
+	mov	h,m	; page for jump vectors?
+	mov	l,c	; offset in page for routine
+	mov	c,a	; param (for output)
 	pchl
 
 ; Set user number in OS
@@ -472,7 +502,7 @@ opq0:	push	d
 	jmp	opq0
 
 ; Perform CP/NET server loop.
-; C=? A=?
+; C=srv num
 ; does not return.
 cpnet:	lxi	h,-@init	;
 	dad	sp	;
@@ -482,7 +512,7 @@ cpnet:	lxi	h,-@init	;
 	mvi	c,getpdf
 	call	bdos
 	xchg		; DE = our proc descr
-	lxi	h,@procd
+	lxi	h,@procd+0
 	dad	sp	; HL=?procd
 	mov	m,e	;
 	inx	h
@@ -614,10 +644,10 @@ neterr:	pop	h	; off=0
 	jmp	sndbak
 
 ; Console output via BIOS
-conout:	pop	h	; off=0
+conout:	pop	h	; off=0 (HL=MSGBUF)
 	lxi	b,5
 	dad	b
-	push	h
+	push	h	; MSGBUF.DAT
 	mvi	c,3*3	; conout BIOS vector
 	call	biosv
 	pop	h
@@ -650,7 +680,7 @@ lstspo:	mvi	a,0	; (off=2)
 	lda	spoolf
 	rar
 	jnc	sp2
-	lxi	d,tmpdrv
+	lxi	d,spoolfcb
 	lxi	h,@spfcb+2
 	dad	sp
 	push	h	; off=4
@@ -749,17 +779,17 @@ sp5:	pop	psw	; off=2 (0FFH seen)
 	mov	c,m
 	inx	h
 	mov	b,m	; BC=proc desc
-	lxi	h,29	; PD extent? +1?
+	lxi	h,P$ATTR
 	dad	b
 	mov	a,m
 	push	h	; off=4
 	push	psw	; off=6
-	mvi	m,0
+	mvi	m,0	; set compat attrs to "0", temporarily
 	mvi	c,closef ; close spool file
 	call	bdos
 	pop	psw	; off=4 (A=PD ext val)
 	pop	h	; off=2 (HL=PD extent)
-	mov	m,a
+	mov	m,a	; restore normal compat attrs
 	lda	tmpdrv
 	dcr	a
 	add	a
@@ -1002,7 +1032,7 @@ srch1:	lxi	h,@srchp+2
 	mov	c,m
 	inx	h
 	mov	b,m
-	lxi	h,23
+	lxi	h,P$DCNT
 	dad	b	; HL=PROC.DCNT (SEARCHL, SEARCHA)
 	push	h	; off=6
 	mvi	b,5
@@ -1071,7 +1101,7 @@ srch2:	lxi	h,@srcha+2
 	mov	e,m
 	inx	h
 	mov	d,m
-	lxi	h,23	; PROC.DCNT
+	lxi	h,P$DCNT
 	dad	d
 	xchg
 	lxi	h,@srchp+0
@@ -1308,16 +1338,16 @@ cmpatr:	mvi	c,sysdatf
 	pop	h	; off=0, HL=MSGBUF
 	lxi	d,5
 	dad	d
-	mov	a,m	; user num?
+	mov	a,m	; MSGBUF.DAT[0]
 	lxi	h,@procd+0
 	dad	sp
 	mov	e,m
 	inx	h
 	mov	d,m	; DE=proc desc
-	lxi	h,29	; PD extent? +1?
+	lxi	h,P$ATTR
 	dad	d
 	jz	cmpa0
-	mov	m,a
+	mov	m,a	; set compat attrs
 cmpa0:	ora	a
 	jnz	sndbak
 	xchg
