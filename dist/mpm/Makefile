@@ -2,9 +2,6 @@
 export CPMDrive_D = $(PWD)
 export CPMDefault = d:
 
-# SRC = $(HOME)/dztest/server.asm
-SRC = server.asm
-
 .SECONDARY:
 
 CRLFP = unix2dos
@@ -13,7 +10,7 @@ VCPM = vcpm
 
 all: server.rsp
 
-server0.asm: $(SRC)
+%0.asm: %.asm
 	unix2dos -n $^ $@
 
 %.rsp: %0.rel
