@@ -1,0 +1,277 @@
+CP/NET V1.2
+Application Note 02, 11/11/82
+Allowing CP/NET Servers to Use Bank-switched Technology
+
+Copyright (C) 1982 by Digital Research
+CP/NET is a registered trademark of Digital Research.
+CP/NOS and MP/M-II are trademarks of Digital Research.
+Compiled November 1982
+
+(Retyped by Emmanuel ROCHE.)
+
+Applicable Products and Version Numbers: CP/NET V1.2
+
+Because of the size of the SERVER.RSP and NETWRKIF.RSP modules in a CP/NET or
+CP/NOS server, MP/M-II servers usually have common memory requirements greater
+than the amount of common memory available on the target computer. The CP/NET
+user is limited to only 1 bank of the system, wasting any additional banks
+which might be put to use running auxiliary processes.
+
+This Application Note details how to customize the NETWRKIF module into a
+small, Resident System Process portion (RSP), and a larger, Banked Resident
+System Process portion (BRS). This note also provides a method for modifying
+the object code of the SERVER.RSP module to create a banked-out version
+consisting of 2 modules: SERVR0PR.RSP and SERVR0PR.BRS.
+
+By reducing the size of the required RSP modules, common memory requirements
+are sufficiently reduced, so that most MP/M-II systems running CP/NET
+servers can take advantage of their additional memory banks. The remainder of
+the server code resides in the system bank, below the common memory area.
+
+
+Modifying the NETWRKIF
+----------------------
+
+The only sections of the server code that must reside in common memory are
+Process Descriptors (PDs) and Queue Control Blocks (QPBs). A source module
+must, therefore, be prepared containing the XDOS entry point, all the NTWRKIPx
+Process Descriptors, all the NTWRKQIx Queue Control Blocks, and all the
+NTWRKQOx Queue Control Blocks. Also, storage must be allocated for all SERVER
+Process Descriptors greater than SERVR3PR. Process Descriptors SERVR1PR,
+SERVR2PR, and SERVR3PR are set up by the modified SERVER code.
+
+The Process Descriptor NTWRKIP0 must be allocated immediately after the XDOS
+entry point for the module (for example, at relative location 2). Its memory
+segment value should be 0, signifying that a BRS module is associated with it.
+
+If any auxiliary process exists in the NETWRKIF, for example Watchdog
+processes, their Process Descriptors must also be included in this module.
+
+This source module should be assembled and linked into RSP format, following
+the procedure in the "CP/NET Network Operating System Reference Manual". It
+should be named NTWRKIP0.RSP.
+
+The main body of the NETWRKIF source module should then be used to form a
+second source module. All Process Descriptors and Queue Control Blocks should
+be removed, and the following header should be placed at relative location 0:
+
+RSP$ADR: DS 2
+STK$ADR: DW NTWRKIS0+46
+BRS$NAME: DB 'NTWRKIP0'
+
+Notice that the starting stack address of a particular module may be different
+if the implementation differs significantly from the example given in Appendix
+E of the "CP/NET Network Operating System Reference Manual". This description
+is merely the standard format for a BRS module. It is described in more detail
+in the "MP/M-II System Guide".
+
+Because the Process Descriptors and Queue Control Blocks are in a separate
+RSP, they cannot be resolved as simple externals. They must be defined in
+terms of known offsets from the beginning of NTWRKIP0.RSP. At run time, the
+variable RSP$ADR contains a pointer to the beginning of this RSP. Using this
+pointer and the predefined offsets, required references to these data objects
+can be resolved.
+
+The process NTWRKIP0 should, on start-up, perform the following
+initialization:
+
+1) The Stack Pointer field in Process Descriptors NTWRKIP1 through
+NTWRKIPx should be initialized with a pointer to the top of the stack
+associated with each process.
+
+2) All user Queue Control Blocs should load a pointer to the actual QCBs
+in their pointer fields. This process allows a subsequent Make Queue
+function call to be performed properly.
+
+3) The tops of the stacks associated with processes SERVR4PR through
+SERVRxPR should be initialized to contain a pointer to their Process
+Descriptors. The stacks for SERVR1PR, SERVR2PR, and SERVR3PR need not
+be initialized because the process SERVR0PR makes those Process
+Descriptors internal to the module SERVR0PR.RSP.
+
+4) Space need not be allocated for Process Descriptors SERVR1PR,
+SERVR2PR, and SERVR3PR, because SERVR0PR creates these Process
+Descriptors internal to the module SERVR0PR.RSP.
+
+This module requires a different way of referencing the operating system,
+because it does not contain a pointer to the XDOS entry point. The RSP,
+however, does contain such a pointer as its first 2 bytes. The following is an
+example of a subroutine which transparently performs operating system calls:
+
+DO$OS:
+LHLD RSP$ADR
+MOV A,M
+INX H
+MOV H,M
+MOV L,A
+PCHL
+
+This module must also be assembled and linked into RSP format, but it should
+be named NTWRKIP0.BRS.
+
+
+Modifying the Server
+--------------------
+
+The following patch uses the object code in SERVER.RSP to produce 2 files,
+SERVR0PR.RSP and SERV0PR.BRS, that can be run in a Banked MP/M system:
+
+0A>ddt server.rsp
+[MP/M II] DDT VERS 2.0
+NEXT PC
+0D00 0100
+-S0101
+0101 57 36
+0102 09 0
+0103 00 .
+-S0211
+0211 FF 0
+021200 .
+-F0236,023C,0
+-Iservr0pr.rsp
+-W3
+-Iserver.rsp
+-R
+NEXT PC
+0D00 0100
+-S0202
+0202 00 5C
+0203 00 00
+0204 00 53
+0205 64 45
+0206 5C 52
+0207 00 56
+0208 53 52
+0209 45 30
+020A 52 50
+020B 56 52
+020C D2 .
+-B0107,0
+-B0103,1
+-A0470
+0479 jmp c
+047C .
+-A020C
+020C lhld 0
+020F mov a,m
+0210 inx h
+0211 mov h,m
+0212 mov l,a
+0213 pchl
+0214 .
+-B010E,1
+-A04AF
+04AF jmp c
+04B2 .
+-A04BD
+04BD jmp c
+04C0 .
+-A0AEB
+0AEB jmp 14
+0AEE pop h
+0AEF .
+-A0214
+0214 push h
+0215 lhld 0
+0218 lxi d,54
+021B dad d
+021C xchg
+021D jmp 8EE
+0220 .
+-B09ED,1
+-B0117,1
+-B011F,1
+-A0AF5
+0AF5 cpi 5
+0AF7 jmp 20
+0AFA xchg
+0AFB .
+-A0220
+0220 jc 27
+0223 mov e,m
+0224 inx h
+0225 mov d,m
+0226 dcx h
+0227 push h
+0228 push d
+0229 lhld0
+022C inx h
+022D inx h
+022E jmp 8FA
+0231 .
+-B09FA,0
+-B09F9,1
+-B0122,1
+-B012B,1
+-B0130,1
+-Iservr0pr.brs
+-W18
+-G0
+0A>
+
+
+System Generation and Performance Issues
+----------------------------------------
+
+GENSYS should be performed with a banked system specified. Additional memory
+segments can be added to occupy the new banks. Their address ranges are
+prompted at the end of GENSYS.
+
+When RSPs are selected, do not use NETWRKIF.RSP and SERVER.RSP. Use the
+NTWRKIP0.RSP and SERVR0PR.RSP modules just created.
+
+The following table details the combined size and the common memory
+requirements of the 2 new RSPs for various numbers of requesters, assuming 2
+Queue Control Blocks per requester, as in the example in Appendix E of the
+"CP/NET Network Operating System Reference Manual".
+
+Table 1. Size and Memory Requirements
+
+Number of Pages required Pages required
+requesters with no watchdog with one watchdog
+---------- ---------------- -----------------
+1 2 2
+2 2 3
+3 3 3
+4 3 3
+5 4 4
+6 4 4
+7 4 5
+8 5 5
+9 5 5
+10 6 6
+11 6 6
+12 6 7
+13 7 7
+14 7 7
+15 8 8
+16 8 8
+
+If the number of supported requesters requires more common memory than is
+available, using the banked version of the server gains nothing. It is
+possible to reduce the requirements listed in the table by implementing a
+system that uses a single network interface process to feed all of the server
+processes. This process is detailed in "CP/NET V1.2 Application Note 01".
+
+A banked-out server has a marginally slower response time, because the
+dispatcher must select the system bank, and the added level of indirection in
+calling the operating system. This degradation should be insignificant.
+
+Although banking out the server provides additional user segments under MP/M-
+II, the temptation to add additional consoles to the system should be avoided.
+Performance on any such additional consoles is very poor because of the high
+priority at which the server runs. However, these extra banks provide the user
+with a means of performing occasional jobs directly from the MP/M level.
+
+Extra segments can enhance the server. Using alternate formats with CP/NET
+messages, the user can implement additional dedicated print servers, gather
+statistics on network performance, implement sophisticated electronic mail
+systems, etc. Such enhancements can greatly improve the quality of the overall
+CP/NET environment.
+
+
+Licensed users are granted the right to include these modifications in CP/NET
+software.
+
+
+EOF 

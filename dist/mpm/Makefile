@@ -1,5 +1,6 @@
 # For the 'vcpm' (VirtualCpm.jar) emulation
 export CPMDrive_D = $(PWD)
+export CPMDrive_E = $(PWD)/tmp
 export CPMDefault = d:
 
 .SECONDARY:
@@ -10,11 +11,12 @@ VCPM = vcpm
 
 all: server.rsp
 
-%0.asm: %.asm
+tmp/%.asm: %.asm
+	@mkdir -p tmp
 	unix2dos -n $^ $@
 
-%.rsp: %0.rel
-	$(VCPM) link $@=$*0"[os,nr]"
+%.rsp: %.rel
+	$(VCPM) link $@=$*"[os,nr]"
 
-%.rel: %.asm
-	$(VCPM) rmac $< '$$SZ'
+%.rel: tmp/%.asm
+	$(VCPM) rmac e:$* '$$RDPDSZ'

@@ -3,6 +3,8 @@
 ; must match same in NETWRKIF.ASM
 slave$stk$len	equ	150
 configtbl$len	equ	30
+; Modification described in App Note #01:
+single$QO	equ	0	; "1" to enable App Note #01
 ;
 ; ASCII control characters
 cr	equ	13
@@ -559,6 +561,9 @@ L0323:	stax	d	; set 'x' in "NtwrkQIx"
 	mov	m,a	; "NtwrkQOx"
 	inx	h
 	xchg
+ if single$QO
+	mvi	a,'0'	; always use queue 0
+ else
 	lxi	h,@srvno+0
 	dad	sp
 	mov	a,m
@@ -567,6 +572,7 @@ L0323:	stax	d	; set 'x' in "NtwrkQIx"
 	adi	'0'
 	jmp	L034f
 L034d:	adi	'A'-10
+ endif
 L034f:	stax	d	; set 'x' in "NtwrkQOx"
 	lxi	h,@uqcbo+0+2	; +2 for call
 	call	openq

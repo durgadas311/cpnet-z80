@@ -1,0 +1,83 @@
+CP/NET V1.2
+Application Note 03, 11/11/82
+Changing the CP/NET and CP/NOS Version Number
+
+Copyright (C) 1982 by Digital Research
+CP/M and CP/NET are registered trademarks of Digital Research.
+CB-80, CP/M Plus, CP/NOS, MP/M and MP/M-II
+are trademarks of Digital Research.
+Compiled November 1982
+
+(Retyped by Emmanuel ROCHE.)
+
+Applicable Products and Version Numbers: CP/NET V1.2
+
+Function 12, Return Version Number, returns a 2-byte value in register HL. The
+low-order byte contains the release number. This number is set to 22
+hexadecimal if CP/NET is running under CP/M Version 2.2. The high-order byte
+specifies the operating system type: 0=CP/M, 1=MP/M-II, and 2=CP/NET or
+CP/NOS.
+
+Many application programs specifically check to ensure that they are running
+under either CP/M or MP/M-II. They might fail when run under CP/NET or CP/NOS.
+Another problem arises when applications check the release number before
+performing certain shared file operations. For example, CB-80 requires a
+hexadecimal 30 or greater in the release number before opening a file in
+shared mode.
+
+The following patch causes Function 12 to return any desired version number
+when the NDOS has been loaded for CP/NET operations.
+
+A>ren ndos.sav=ndos.spr
+A>ddt ndos.spr
+DDT VERS 2.2
+NEXT PC
+0F80 0100
+-A0AC0
+0AC0 lxi h,(version number)
+0AC3 nop
+0AC4 .
+-G0
+A>save 15 ndos.spr
+
+where (version number) is an hexadecimal value, chosen to support a desired
+application:
+
+0022 makes the system look like unmodified CP/M 2.2
+0130 makes the system look like MP/M-II
+0230 CP/NET, but with a version number that allows
+CB-80 to run using shared files.
+
+This same patch can be applied to CP/NOS. Link CP/NOS as you would to produce
+a COM file. The patch is made to the COM file before converting it to ROM, or
+to a form that you can download.
+
+A>ren cpnos.sav=cpnos.com
+A>ddt cpnos.com
+DDT VERS 2.2
+NEXT PC
+0F80 0100
+-A082E
+082E lxi h,(version number)
+082F nop
+0830 .
+-G0
+A>save xx cpnos.com
+
+The size of the COM file depends on the size of your CPNIOS and CPBIOS
+modules. Save the correct number of pages after performing the patch.
+
+Because this patch makes the CP/NET or CP/NOS system have the same version
+number as a CP/M system, applications that specifically check for a CP/NET
+system might now function improperly. Applications that require the system to
+look like MP/M-II might not work when the system is configured to look like
+CP/M. All CP/NET utilities check to make sure that the operating system type
+is set to 2, for CP/NET. It might be useful to write a set of programs that
+dynamically perform the patching process. This allows a user to invoke the
+appropriate version number before running an application.
+
+When running either CP/NET or CP/NOS with a version number of 30 or greater,
+make sure that the application makes no calls to MP/M-II or CP/M Plus
+functions not supported by CP/NET. Examples of such functions are queue
+handling calls, attach and detach functions, multisector I/O, and memory
+management. Invoking such functions results in a program error. 

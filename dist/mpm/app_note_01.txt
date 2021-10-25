@@ -1,0 +1,87 @@
+CP/NET V1.2
+Application Note 01, 11/11/82
+Writing Improved NETWRKIF Modules for CP/NET
+
+Copyright (C) 1982 by Digital Research
+CP/NET is a registered trademark of Digital Research.
+MP/M-II is a trademark of Digital Research.
+Compiled November 1982
+
+(Retyped by Emmanuel ROCHE.)
+
+Applicable Products and Version Numbers: CP/NET V1.2
+
+Use a small patch to the SERVER.RSP module to write a NETWRKIF module that has
+marked space and performance efficiencies.
+
+The patch causes all of the SERVER processes to write their output to the same
+queue, NtwrkQ00:
+
+0A>pip server.sav=server.rsp
+0A>ddt server.rsp
+[MP/M II] DDT VERS 2.0
+NEXT PC
+0D00 0100
+-A0543
+0543 mvi a,30
+0545 jmp 34F
+0548 .
+-Iserver.rsp
+-W18
+-G0
+0A>
+
+The patched SERVER.RSP must now be GENSYSed into MP/M-II.
+
+With this patch installed, a server architecture is possible that requires
+only 2 non-reentrant NETWRKIF processes: one queue to the output NETWRKIF
+process, and one input queue for every server process on the host computer.
+The relationship between queues and processes is shown in the following
+figure.
+
+                 **********     +----------+
+           +--->* NtwrkQI0 *--->| SERVR0PR |--->+
+           |     **********     +----------+    |
+           |                                    |
++----------+     **********     +----------+    |
+| NTWRKIN  |--->* NtwrkQI1 *--->| SERVR1PR |--->+
++----------+     **********     +----------+    |
+           |                                    |
+           |     **********     +----------+    |
+           +--->* NtwrkQI2 *--->| SERVR2PR |--->+
+                 **********     +----------+    |
+                                                |
++----------+                                    |
+| NTWRKOUT | ... ...                            |
++----------+                                    |
+     ^                                          |
+     |                                          |
+ **********                                     |
+* NtwrkQO0 * ... ...                            |
+ **********                                     |
+     ^                                          |
+     |                                          |
+     +----------------------<-------------------+
+
+Figure 1. Server architecture
+
+The process NTWRKIN handles all network input and routes messages from the
+network interface to the appropriate server process through an input queue.
+The process NTWRKOUT reads the single output queue and sends a response
+message back out over the network.
+
+Minimizing the number of Process Descriptors (PD) and queues improves MP/M-II
+dispatch time, because the process and queue threads are shorter and take less
+time to traverse. Less common memory is required, because fewer Process
+Descriptors and Queue Control Block (QCB) are needed.
+
+Enough buffer space must be allocated to the output queue, so that a pointer
+to a message from every server process in the system can be written
+simultaneously, or the NETWRKIF module can limit the number of messages being
+worked on at any one time, and size the queue buffer accordingly. This process
+involves a small amount of buffer management analogous to the MX queue
+demonstrated in Appendix E of the "CP/NET Network Operating System Reference
+Manual".
+
+This type of server architecture is demonstrate by the example programs in
+Appendices F and G. 

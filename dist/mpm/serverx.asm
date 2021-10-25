@@ -5,6 +5,8 @@
 ; must match same in NETWRKIF.ASM
 slave$stk$len	equ	150
 configtbl$len	equ	30
+; Modification described in App Note #01:
+single$QO	equ	0	; "1" to enable App Note #01
 ;
 ; ASCII control characters
 cr	equ	13
@@ -573,7 +575,11 @@ cpnet:	lxi	h,-@init	;
 	mov	m,a	; "NtwrkQOx"
 	inx	h
 	xchg
+ if single$QO
+	mvi	a,'0'	; always use queue 0
+ else
 	SRVNUM	0	; get srvno as hex digit
+ endif
 	stax	d	; set 'x' in "NtwrkQOx"
 	lxi	h,@uqcbo+0+2	; +2 for call
 	call	openq
