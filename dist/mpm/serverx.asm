@@ -2,6 +2,10 @@
 ; Contains code optimizations (macros) that cause a slight
 ; variation in one code sequence, compared to original SERVER.RSP.
 ;
+; must match same in NETWRKIF.ASM
+slave$stk$len	equ	150
+configtbl$len	equ	30
+;
 ; ASCII control characters
 cr	equ	13
 lf	equ	10
@@ -62,9 +66,29 @@ DAT	equ	5	; start of payload
 ; NOTE: CP/NET "compatability attributes" are kept in
 ; the server process descriptor "PD extent high byte",
 ; at offset 29 in PD.
+P$CONLST equ	14	; CON:/LST: device
 P$DCNT	equ	23	; offset of DCNT,SEARCHL,SEARCHA in PD
 P$EXT	equ	28	; offset of "PD EXTENT" in PD
 P$ATTR	equ	P$EXT+1	; CP/NET compat attrs in PD
+P$BC	equ	46	; BC register in PD
+P$LEN	equ	52	; PD length
+
+; System Info
+S$CPNET	equ	9	; CP/NET master configuration table address
+S$TEMP	equ	196	; Temporary file drive
+
+; CP/M FCB
+F$NAM	equ	1	; FILENAME
+F$TYP	equ	9	; TYP
+F$EXT	equ	12	; extent
+F$RC	equ	15	; rec cnt
+F$CR	equ	32	; current record
+F$RREC	equ	33	; random record
+F$LEN	equ	36	; FCB length
+
+; CP/M DIRENT
+D$LEN	equ	32	; DIRENT length
+
 
 ; some macros to simplify shared code.
 HEXASCII macro	; convert 0..F in A to ASCII hex digit
@@ -645,7 +669,7 @@ neterr:	pop	h	; off=0
 
 ; Console output via BIOS
 conout:	pop	h	; off=0 (HL=MSGBUF)
-	lxi	b,5
+	lxi	b,DAT
 	dad	b
 	push	h	; MSGBUF.DAT
 	mvi	c,3*3	; conout BIOS vector
@@ -656,7 +680,7 @@ conout:	pop	h	; off=0 (HL=MSGBUF)
 
 ; List output via BIOS
 lstout:	pop	h	; off=0
-	lxi	b,6
+	lxi	b,DAT+1
 	dad	b
 	mov	a,m
 	mvi	c,4*3	; lstout BIOS vector
@@ -684,7 +708,7 @@ lstspo:	mvi	a,0	; (off=2)
 	lxi	h,@spfcb+2
 	dad	sp
 	push	h	; off=4
-	mvi	b,36
+	mvi	b,F$LEN
 	call	moveb
 	SRVNUM	4	; get srvno as hex digit
 	pop	h	; off=2 (HL=?spfcb)
@@ -695,7 +719,7 @@ lstspo:	mvi	a,0	; (off=2)
 	mov	m,a	; set 'x'
 	inx	h
 	mvi	m,'0'
-	lxi	h,134	; what is here?
+	lxi	h,DAT+1+128	; what is here?
 	dad	d
 	xchg
 	mvi	c,dmaf
@@ -720,7 +744,7 @@ sp1:	pop	d
 
 sp2:	pop	h	; off=0 (HL=MSGBUF)
 	push	h	; off=2
-	lxi	d,5
+	lxi	d,DAT
 	dad	d
 	mov	e,m	; DAT[0] = LST: number
 	mvi	c,setlstf
@@ -731,7 +755,7 @@ sp3:	lda	spoolf
 	rar
 	jnc	sp6
 	pop	h	; off=0 (HL=MSGBUF)
-	lxi	d,6
+	lxi	d,DAT+1
 	dad	d	; DAT[1]... chars for printer
 	push	h	; off=2
 	xchg
@@ -761,7 +785,7 @@ sp4:	lxi	h,@spfcb+4
 	mvi	c,wrndf
 	call	bdos
 	pop	d	; off=4 (DE=?spfcb)
-	lxi	h,33	; point to rand record in fcb
+	lxi	h,F$RREC	; point to rand record in fcb
 	dad	d
 	inr	m	; increment rand record
 	jnz	sp5	;
@@ -862,7 +886,7 @@ sp9:	lxi	h,@spact+0
 
 ; Console input via BIOS
 conin:	pop	h
-	lxi	d,5
+	lxi	d,DAT
 	dad	d
 	push	h
 	mvi	c,2*3	; conin BIOS vector
@@ -959,7 +983,7 @@ getcfg:	pop	h	; off=0 (HL=MSGBUF)
 
 ; simple  FCB funcs: delete,rename,set-attrs
 smpfcb:	pop	h	; off=0 (HL=MSGBUF)
-	lxi	d,5
+	lxi	d,DAT
 	dad	d	; HL=MSGBUF.DAT
 	push	h	; off=2
 	mov	a,m
@@ -981,7 +1005,7 @@ smpfcb:	pop	h	; off=0 (HL=MSGBUF)
 
 ; search first/next (return is DIRENT)
 search:	pop	h	; off=0 (HL=MSGBUF)
-	lxi	d,6
+	lxi	d,DAT+1
 	dad	d	; HL=MSGBUF.DAT[1]
 	push	h	; off=2
 	mov	a,m
@@ -1084,17 +1108,17 @@ srch2:	lxi	h,@srcha+2
 	jz	sndbak
 	push	h	; off=2
 	dcx	h
-	mvi	m,33-1	; response SIZ is 33
+	mvi	m,D$LEN+1-1	; response SIZ is 33
 	ani	003h
 	mov	b,a
-	lxi	d,32
+	lxi	d,D$LEN
 	call	multDE	; index into DMA buf
 	xchg
 	pop	d	; off=0 (DE=MSGBUF.DAT)
 	inx	d
 	dad	d
 	xchg
-	mvi	b,32
+	mvi	b,D$LEN
 	call	moveb	; move DIRENT into MSGBUF
 	lxi	h,@procd+0
 	dad	sp
@@ -1336,7 +1360,7 @@ cmpatr:	mvi	c,sysdatf
 	mov	a,m
 	ora	a	; ZR tested later...
 	pop	h	; off=0, HL=MSGBUF
-	lxi	d,5
+	lxi	d,DAT
 	dad	d
 	mov	a,m	; MSGBUF.DAT[0]
 	lxi	h,@procd+0
@@ -1380,24 +1404,24 @@ cmpa1:	pop	h	; off=0
 	call	bdos
 	jmp	sndbak
 
-stdfcb:	pop	h
-	lxi	d,5
+stdfcb:	pop	h	; off=0 (HL=MSGBUF)
+	lxi	d,DAT
 	dad	d
-	push	h
-	mov	a,m
+	push	h	; off=2
+	mov	a,m	; MSGBUF.DAT[0]
 	call	setusr
-	pop	h
-	push	h
-	lxi	d,37
-	dad	d
+	pop	h	; off=0 (HL=MSGBUF.DAT)
+	push	h	; off=2
+	lxi	d,37	; skip past FCB
+	dad	d	; record data in MSGBUF
 	xchg
 	mvi	c,dmaf
 	call	bdos
-	pop	h
-	push	h
+	pop	h	; off=0 (HL=MSGBUF.DAT)
+	push	h	; off=2
 	dcx	h
 	dcx	h
-	mov	c,m
+	mov	c,m	; FNC
 	mov	a,c
 	inx	h
 	cpi	rseqf
@@ -1408,14 +1432,14 @@ sfcb0:	mvi	m,getlstf
 	jmp	sfcb2
 
 ; neither read seq nor rand, just do it.
-sfcb1:	mvi	m,36
+sfcb1:	mvi	m,F$LEN+1-1	; FCB and usrnum only
 ; common FCB handling
 sfcb2:	inx	h
-	inx	h
+	inx	h	; FCB at MSGBUF.DAT[1]
 	xchg
-	call	bdos
+	call	bdos	; perform function
 	xchg
-	pop	h
+	pop	h	; off=0 (MSGBUF.DAT)
 	call	setret
 ; reverse DID/SID and send message back to requester
 sndbak:	lxi	h,@msgqi+0	; off=0
@@ -1445,7 +1469,7 @@ pstart:	lxi	d,spoolq
 	call	bdos
 	ora	a
 	jz	ps0
-	lxi	d,5
+	lxi	d,5	; sleep for 5 ticks
 	mvi	c,delayf
 	call	bdos
 	; try once more, only
@@ -1460,7 +1484,7 @@ ps0:	mvi	a,0ffh
 	sta	spoolf
 ps1:	mvi	c,sysdatf
 	call	bdos
-	lxi	d,9	; CP/NET master config table addr
+	lxi	d,S$CPNET	; CP/NET master config table addr
 	dad	d
 ps2:	mov	a,m
 	inx	h
@@ -1485,12 +1509,12 @@ ps3:	pop	h
 	inx	h
 	mov	a,m	; max num requesters
 	sta	maxcon
-	lxi	d,28
-	dad	d
-	push	h	; srvcfg+30 = slave stacks, etc.
+	lxi	d,configtbl$len-2
+	dad	d	; point to slaveX$stk's
+	push	h	; (must follow cfgtbl)
 	mvi	c,sysdatf
 	call	bdos
-	lxi	d,196	; temp drive
+	lxi	d,S$TEMP	; temp drive
 	dad	d
 	mov	a,m
 	sta	tmpdrv
@@ -1498,7 +1522,7 @@ ps3:	pop	h
 	mvi	b,0	; loop counter
 	lda	maxcon
 	mov	c,a	; C=max num requesters
-	lxi	d,148	; slave$stk$len-2
+	lxi	d,slave$stk$len-2
 	dad	d
 	mov	e,m
 	inx	h
@@ -1514,7 +1538,7 @@ ps4:	inr	b
 	xchg
 	lxi	d,SERVR0PR
 	push	b
-	mvi	b,52
+	mvi	b,P$LEN
 	call	moveb
 	pop	b
 	pop	h	; SlaveX proc descr
@@ -1525,19 +1549,19 @@ ps4:	inr	b
 	xra	a
 	mov	m,a
 	inx	h
-	mov	m,a	; set SlaveX link to NULL
+	mov	m,a	; set SlaveX PL to NULL
 	inx	h
 	inx	h
-	inx	h
+	inx	h	; PD.STKPTR
 	mov	m,e	; stack pointer/start...
 	inx	h
 	mov	m,d	;
+	inx	h	; PD.NAME[0]
 	inx	h
 	inx	h
 	inx	h
 	inx	h
-	inx	h
-	inx	h	; 'x' in "SERVRxPR"
+	inx	h	; PD.NAME[5], 'x' in "SERVRxPR"
 	mov	a,b
 	HEXASCII
 	mov	m,a	; set 'x' in "SERVRxPR"
@@ -1549,12 +1573,12 @@ ps4:	inr	b
 	pop	b
 	inx	d
 	inx	d
-	inx	d
+	inx	d	; PD.CONSOLE/LIST
 	mov	a,b
-	stax	d	; "console id"? re-purposed?
-	lxi	h,32
+	stax	d	; set con/lst
+	lxi	h,P$BC-P$CONLST
 	dad	d
-	mov	m,b	; also in A reg
+	mov	m,b	; also in C reg
 	pop	d
 	push	d
 	push	b
@@ -1562,10 +1586,10 @@ ps4:	inr	b
 	call	bdos	; create new process
 	pop	b
 	pop	h	; proc descr addr
-	lxi	d,52
+	lxi	d,P$LEN
 	dad	d	; next proc descr slot
 	xthl
-	lxi	d,150
+	lxi	d,slave$stk$len
 	dad	d	; next proc stack slot
 	pop	d
 	jmp	ps4
