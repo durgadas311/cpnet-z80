@@ -48,12 +48,12 @@ setlstf	equ	160
 getlstf	equ	164
 
 cpm	equ	0
-deffcb	equ	005ch
 
 ; UQCB elements
 Q$PTR	equ	0
 Q$MSG	equ	2
 Q$NAME	equ	4	; 8 bytes long
+Q$LEN	equ	12
 
 ; CP/NET message buffer (MSGBUF) layout
 FMT	equ	0	; 00 for requests, 01 for responses
@@ -62,11 +62,28 @@ SID	equ	2	; Source node ID (sender)
 FNC	equ	3	; BDOS/NDOS function number
 SIZ	equ	4	; payload length, -1 (00 means 1 byte)
 DAT	equ	5	; start of payload
+TMP	equ	DAT+1+128	; unused space, when searchf/nextf used.
+				; Only DAT+2+F$LEN used by searchf reqs,
+				; DAT+1+D$LEN for responses.
+				; other intervening functions could destroy,
+				; possibly breaking searches.
+
+; CP/NET Server config table, in NetWrkIF
+G$STS	equ	0	; server status byte
+G$NID	equ	1	; server node ID
+G$MAX	equ	2	; Maximum number of requesters supported
+G$NUM	equ	3	; Number of requesters currently logged-in
+G$VEC	equ	4	; 16-bit vector of login slots
+G$LOG	equ	6	; Array[16] of logged-in NIDs, per G$VEC
+G$PWD	equ	22	; login password (8 bytes)
+G$LEN	equ	22	; length exported, password never revealed.
+G$ALL	equ	30	; total length
 
 ; NOTE: CP/NET "compatability attributes" are kept in
 ; the server process descriptor "PD extent high byte",
 ; at offset 29 in PD.
 P$CONLST equ	14	; CON:/LST: device
+P$DSEL	equ	22	; DISK SLCT
 P$DCNT	equ	23	; offset of DCNT,SEARCHL,SEARCHA in PD
 P$EXT	equ	28	; offset of "PD EXTENT" in PD
 P$ATTR	equ	P$EXT+1	; CP/NET compat attrs in PD
@@ -169,7 +186,7 @@ stack0:	ds	0	; extended stack
 @uqcbo	equ	?uqcbo-?base
 
 	db	'COPYRIGHT (C) 1982, DIGITAL RESEARCH '
-	db	0,0ch,0,2,4,0c4h	; serial number
+	db	0,0,0,0,0,0	; serial number
 
 ; Template for network message queue (input)
 qtmplt:	db	'NtwrkQIx'	; 'x' replaced by 0..F, also 'O' for "NtwrkQOx"
@@ -725,7 +742,7 @@ L042b:	pop	h	; off=2 (HL=?spfcb)
 	mov	m,a	; set 'x'
 	inx	h
 	mvi	m,'0'
-	lxi	h,DAT+1+128	; what is here?
+	lxi	h,TMP	; safe space, during searchf/nextf functions
 	dad	d
 	xchg
 	mvi	c,dmaf
@@ -974,16 +991,16 @@ getcfg:	pop	h	; off=0 (HL=MSGBUF)
 	inx	h
 	inx	h
 	inx	h
-	mvi	m,23-1	; srv cfg tbl SIZ is 23 bytes
+	mvi	m,G$LEN+1-1	; srv cfg tbl resp SIZ is 23 bytes
 	inx	h
 	xchg
 	lda	tmpdrv
 	dcr	a
-	stax	d	; TMP drive
+	stax	d	; TMP drive (not in srv cfg tbl)
 	inx	d
 	lhld	srvcfg	; plus rest of internal config table
 	xchg
-	mvi	b,22
+	mvi	b,G$LEN
 	call	moveb
 	jmp	sndbak
 
@@ -1242,30 +1259,31 @@ lgi0:	push	d	; off=2
 	lhld	srvcfg
 	inx	h
 	inx	h
-	mov	a,m
+	mov	a,m	; G$MAX
 	inx	h
-	cmp	m
+	cmp	m	; G$NUM
 	jnz	lgi1
 	pop	h	; off=0 (HL=MSGBUF.DAT)
 	mvi	m,0ffh	; non-descript failure code
+	; BUG? needs "ei"?
 	jmp	sndbak
 
 lgi1:	push	h	; off=4
-	lxi	b,19	; login NID array...
+	lxi	b,G$PWD-G$NUM	; login password
 	dad	b
 	mvi	b,8
-lgi2:	ldax	d
+lgi2:	ldax	d	; MSGBUF.DAT[x]
 	cmp	m
-	jnz	lgi5
+	jnz	lgi5	; passwords don't match...
 	inx	h
 	inx	d
 	dcr	b
 	jnz	lgi2
-	; match...
-	pop	h	; off=2 (HL=srvcfg...)
+	; passwords match...
+	pop	h	; off=2 (HL=srvcfg.G$NUM)
 	inr	m	; one more requestor logged in...
-	inx	h
-	; find "0" in bitmap
+	inx	h	; srvcfg.G$VEC
+	; find "0" in G$VEC bitmap
 	lxi	d,00001h
 	lxi	b,0
 lgi3:	push	d	; off=4
@@ -1273,30 +1291,32 @@ lgi3:	push	d	; off=4
 	ora	e
 	pop	d	; off=2
 	dcx	h
-	jz	lgi4
+	jz	lgi4	; found a spot...
 	xchg		; DE <<= 1
 	dad	h
 	xchg
-	inr	c
-	jmp	lgi3
+	inr	c	; bit number, 0..15
+	jmp	lgi3	; BUG? does not stop after bit 15...
 
-lgi4:	mov	a,e	; set bitmap
+	; BUG? C might be 16 here...
+lgi4:	mov	a,e	; set G$VEC bitmap
 	ora	m
 	mov	m,a
 	inx	h
 	mov	a,d
 	ora	m
 	mov	m,a
-	inx	h
-	dad	b	; NID in array, relative to bit in bitmap
+	inx	h	; G$LOG
+	dad	b	; G$LOG[bit]
 	pop	d	; off=0 (DE=MSGBUF.DAT)
 	xra	a
 	stax	d	; resp "success"
 	dcx	d
 	dcx	d
 	dcx	d	; SID
-	ldax	d	; requester NID
-	mov	m,a	; record login NID
+	ldax	d	; requester NID from MSGBUF
+	; BUG? This might trash password if C=16
+	mov	m,a	; record login NID at G$LOG[bit]
 	jmp	lgi6
 
 lgi5:	pop	h	; off=2
@@ -1320,29 +1340,29 @@ logout:	pop	h	; off=0 (HL=MSGBUF)
 	lhld	srvcfg
 	inx	h
 	inx	h
-	mov	c,m
+	mov	c,m	; G$MAX
 	mov	b,c
 	inx	h
 	inx	h
 	inx	h
-	inx	h
-lgo0:	cmp	m
+	inx	h	; G$LOG
+lgo0:	cmp	m	; search for this NID
 	jz	lgo1
 	inx	h
 	dcr	c
 	jnz	lgo0
-	jmp	sndbak
+	jmp	sndbak	; not logged in, just send success
 
 lgo1:	mov	a,b
-	sub	c
-	di
+	sub	c	; position of requester in array/bitmap
+	di	;------------------- begin crit sect
 	lhld	srvcfg
 	inx	h
 	inx	h
 	inx	h
-	dcr	m
+	dcr	m	; G$NUM, one less requester logged in
 	inx	h
-	push	h
+	push	h	; G$VEC
 	mov	e,m
 	inx	h
 	mov	d,m
@@ -1351,12 +1371,12 @@ lgo1:	mov	a,b
 	lxi	h,drvmsk
 	dad	b
 	dad	b
-	call	andM
-	pop	h
+	call	andM	; clear requester's bit
+	pop	h	; G$VEC
 	mov	m,e
 	inx	h
 	mov	m,d
-	ei
+	ei	;------------------- end crit sect
 	jmp	sndbak
 
 cmpatr:	mvi	c,sysdatf
@@ -1396,11 +1416,11 @@ cmpa0:	ora	a
 	mvi	c,closef
 	call	bdos
 	stc
-cmpa1:	pop	h	; off=0
+cmpa1:	pop	h	; off=0 (HL=proc desc)
 	push	psw	; off=2
-	lxi	d,22
+	lxi	d,P$DSEL
 	dad	d
-	mvi	m,000h
+	mvi	m,0	; drive A:, user 0
 	pop	psw	; off=0
 	jnc	sndbak
 	lxi	h,@spfcb+0
@@ -1418,7 +1438,7 @@ stdfcb:	pop	h	; off=0 (HL=MSGBUF)
 	call	setusr
 	pop	h	; off=0 (HL=MSGBUF.DAT)
 	push	h	; off=2
-	lxi	d,37	; skip past FCB
+	lxi	d,F$LEN+1	; skip past FCB
 	dad	d	; record data in MSGBUF
 	xchg
 	mvi	c,dmaf
