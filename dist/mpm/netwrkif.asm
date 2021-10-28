@@ -17,27 +17,27 @@
 ;
 ;  Modified October 5, 1982
 ;
-;  Modified December 2006 for Z80SIM by Udo Munk
 ;*/
 
 	
 false	equ	0
 true	equ	not false
-debug	equ	false
 
-WtchDg	equ	true		; include watch dog timer
+z80	equ	true
+
+debug	equ	false
+modem	equ	false
+
+WtchDg	equ	false		; include watch dog timer
 
 mutexin	equ	false		; provide mutual exclusion on input
 mutexout equ	false		; provide mutual exclusion on output
 
-NmbSlvs	equ	2		; Number of slaves
-
-Console1$status	equ	40
-Console2$status	equ	42
-Console3$status	equ	44
-Console4$status	equ	46
 
 	if	debug
+
+NmbSlvs	equ	1		;debug only one requester
+
 	lxi	sp,NtwrkIS0+2eh
 	mvi	c,145
 	mvi	e,64
@@ -47,13 +47,17 @@ Console4$status	equ	46
 	lxi	b,BufferQ0
 	mvi	a,00h
 	ret
-	endif
 
 bdosadr:
-	if	debug
 	dw	0005h
+
 	else
+
+NmbSlvs	equ	2		;RSP is configured for two requesters
+
+bdosadr:
 	dw	$-$		;XDOS entry point for RSP version
+
 	endif
 
 ;  Network Interface Process #0
@@ -83,7 +87,7 @@ NtwrkIP0:
 	dw	UQCBNtwrkQI0	; HL
 	dw	UQCBNtwrkQO0	; DE
 	dw	BufferQ0	; BC
-	dw	0200H		; AF, A = ntwkif console dev #
+	dw	0		; AF, A = ntwkif console dev #
 	ds	2		; scratch
 
 NtwrkIS0:
@@ -173,7 +177,7 @@ NtwrkIP1:
 	dw	UQCBNtwrkQI1	; HL
 	dw	UQCBNtwrkQO1	; DE
 	dw	BufferQ1	; BC
-	dw	0300h		; AF, A = ntwkif console dev #
+	dw	0100h		; AF, A = ntwkif console dev #
 	ds	2		; scratch
 
 NtwrkIS1:
@@ -549,11 +553,32 @@ Networkstatus:
 conin:	dw	$-$		; save area for XIOS routine address
 
 max$retries	equ	10	; maximum send message retries
+;
+;	The following tables are for use in the ALTOS i/o routines.
+;	Note that this program MUST be used with an XIOS which allows
+;	using the second printer port as a console port - Accessed as console
+;	#4
+
+Console4$status equ	02bh
+Console3$status	equ	02fh
+Console2$status equ	02dh
+Printer2$status	equ	029h	; ALSO CONSOLE #4
+
+	if	z80
+;
+;	ENTRIES IN THE FOLLOWING TWO TABLES MUST MATCH !!!!
+
+status$ports:
+	db	Console4$status ; Console 4 (Requester 0) status port
+	db	Console3$status	; Console 3 (Requester 1) status port
+	db	Console2$status	; Console 2 (Requester 2) status port
+	db	Printer2$status	; Printer 2 (Requester 3) status port
+	endif
 
 chariotbl:			; Relationship between requesters and consoles
-	db	1
-	db	2
 	db	3
+	db	2
+	db	1
 	db	4
 
 ;	Network Status Byte Equates
@@ -589,6 +614,9 @@ LF	equ	0ah		; Line Feed
 CR	equ	0dh		; Carriage Return
 NAK	equ	15h		; Negative Acknowledge
 
+printer2	equ	10h	; special poll device number for second 
+				; printer port
+
 ;	Utility Procedures
 
 bdos:
@@ -611,10 +639,60 @@ PreCharout:
 	add	c
 	mov	d,a		; update the checksum
 
+	if	z80		; Z80 version, using OUT A,(C) instruction
+char$out:
+
+;	Character output routine for network i/o
+;	using the ALTOS SIO ports
+;
+;	Z80 version: this can use indirect port numbers in a clean,
+;	reentrant fashion
+;
+;	Entry: C register contains 8 bit value to transmit
+;	Entry : Slave number in register b
+
+	push	h
+	push	d
+	push	b
+	mov	d, c		; save the character
+	lxi	h, status$ports
+	mov	c, b
+	mvi	b, 0		; set (BC) = (b)
+	dad	b
+	mov	c,m
+
+; 	Now C contains the address of the correct status port
+
+outputloop:
+	mvi	a,10h
+
+;	out	(c),a
+	db	0edh,79h
+
+;	in	a,(c)
+	db	0edh,78h
+
+	ani	04h		; wait for TXready
+	jz	outputloop
+
+; 	In the Altos system, data registers are one below status registers...
+
+	dcr	c
+
+;	out	(c),d
+	db	0edh,51h
+
+	pop	b
+	pop	d
+	pop	h
+	ret
+
+	else
+
 char$out:
 
 ;	Character output routine for network I/O
-;	using Z80SIM SIO ports
+;	using ALTOS SIO ports
 ;
 ;	8080 version: This has to dispatch and then use direct port I/O
 ;	--extremely messy to do reentrantly
@@ -638,60 +716,56 @@ char$out:
 	pchl			;dispatch 
 
 out0:
-	in	Console1$status
-	ani	2
+	out	Console4$status	;wait for TXready status
+	in	Console4$status
+	ani	4
 	jz	out0
 
 	mov	a,c
-	out	Console1$status+1	;write the character
+	out	Console4$status-1	;write the character
 	pop	b
 	pop	d
 	pop	h
 	ret
-	nop			;filler to get 16 bytes, see dispatcher above
-	nop
 
-out1:
-	in	Console2$status
-	ani	2
+out1:	out	Console3$status
+	in	Console3$status
+	ani	4
 	jz	out1
 
 	mov	a,c
-	out	Console2$status+1
+	out	Console3$status-1
 	pop	b
 	pop	d
 	pop	h
 	ret
-	nop			;filler to get 16 bytes, see dispatcher above
-	nop
 
-out2:
-	in	Console3$status
-	ani	2
+out2:	out	Console2$status
+	in	Console2$status
+	ani	4
 	jz	out2
 
 	mov	a,c
-	out	Console3$status+1
+	out	Console2$status-1
 	pop	b
 	pop	d
 	pop	h
 	ret
-	nop			;filler to get 16 bytes, see dispatcher above
-	nop
 
-out3:
-	in	Console4$status
-	ani	2
+out3:	out	Printer2$status
+	in	Printer2$status
+	ani	4
 	jz	out3
 
 	mov	a,c
-	out	Console4$status+1
+	out	Printer2$status-1
 	pop	b
 	pop	d
 	pop	h
 	ret
-	nop			;filler to get 16 bytes, see dispatcher above
-	nop
+
+	endif
+
 
 Nibin:				; return nibble in A register
 	call	Charin
@@ -738,10 +812,62 @@ Charin$return:
 	ret
 
 
+	if	z80
+char$in:
+
+;	Character input routine for network i/o
+;	using the ALTOS SIO ports at 125k baud
+;
+;	Z80 Version uses indirect port addresses loaded into register C
+;	
+;	Entry : Slave number in register b
+;	Exit  : Character in register a
+;
+	push	h
+	push	b
+	lxi	h, status$ports
+	mov	c, b
+	mvi	b, 0		; set (BC) = (b)
+	dad	b
+	mov	c,m
+
+; 	Now C contains the address of the correct status port
+
+	mvi	l, 80
+
+inputloop1:
+	dcr	l
+	jz	retout
+
+;	in	a,(c)
+	db	0edh,78h
+
+	ani	01h		; wait for RXready
+	jz	inputloop1
+
+; 	In the Altos system, data registers are one below status registers...
+
+	dcr	c
+
+;	in	a,(c)
+	db	0edh,78h	;get the character
+
+	pop	b
+	pop	h
+	ret
+
+retout:
+	stc			;set carry => error flag
+	pop	b
+	pop	h
+	ret
+
+	else
+
 char$in:
 
 ;	Character input routine for network I/O
-;	using Z80SIM SIO ports
+;	using ALTOS SIO ports
 ;
 ;	8080 Version uses same nasty dispatch mechanism that the output
 ;	routine used
@@ -768,83 +894,59 @@ char$in:
 	pchl			; dispatch
 
 in0:
-				; we can't use busy waiting with a loop
-				; on 500MHz CPU's, this needs to be handled
-				; different
-;	dcr	c
-;	jz	retout		; error return if retry timeout
+	dcr	c
+	jz	retout		; error return if retry timeout
 
-	in	Console1$status	; wait for RXready
+	in	Console4$status	; wait for RXready
 	ani	1
 	jz	in0
 
-	in	Console1$status+1	; get the character
+	in	Console4$status-1	; get the character
 	pop	b
 	pop	d
 	pop	h
 	ret
-
-	nop			; filler for retry timeout
-	nop
-	nop
-	nop
 
 in1:
-;	dcr	c
-;	jz	retout			
-
-	in	Console2$status		
-	ani	1
-	jz	in1
-
-	in	Console2$status+1	
-	pop	b
-	pop	d
-	pop	h
-	ret
-
-	nop			; filler for retry timeout
-	nop
-	nop
-	nop
-
-in2:
-;	dcr	c
-;	jz	retout			
+	dcr	c
+	jz	retout			
 
 	in	Console3$status		
 	ani	1
-	jz	in2
+	jz	in1
 
-	in	Console3$status+1	
+	in	Console3$status-1	
 	pop	b
 	pop	d
 	pop	h
 	ret
 
-	nop			; filler for retry timeout
-	nop
-	nop
-	nop
+in2:
+	dcr	c
+	jz	retout			
 
+	in	Console2$status		
+	ani	1
+	jz	in2
+
+	in	Console2$status-1	
+	pop	b
+	pop	d
+	pop	h
+	ret
 in3:
-;	dcr	c
-;	jz	retout			
+	dcr	c
+	jz	retout			
 
-	in	Console4$status		
+	in	Printer2$status		
 	ani	1
 	jz	in3
 
-	in	Console4$status+1	
+	in	Printer2$status-1	
 	pop	b
 	pop	d
 	pop	h
 	ret
-
-	nop			; filler for retry timeout
-	nop
-	nop
-	nop
 
 retout:				; error return (carry=1)
 	stc
@@ -852,6 +954,9 @@ retout:				; error return (carry=1)
 	pop	d
 	pop	h
 	ret
+
+	endif
+
 
 Netout:				; C = byte to be transmitted
 	mov	a,d
@@ -932,8 +1037,31 @@ Msgoutloop:
 nwinit:
 
 ;	device initialization, as required
-;
-;
+
+
+	mvi	a,047h		;sets up CTC for baud rate of 125k
+	out	031h
+
+	if	nmbslvs ge 3	;initialize only the ports that are needed
+	out	030h
+	endif
+
+	if	nmbslvs ge 4
+	out	032h
+	endif
+
+	mvi	a,1		;count of one => max speed
+	out	031h
+
+	if	nmbslvs ge 3
+	out	030h		
+	endif
+
+	if	nmbslvs ge 4
+	out     032h
+	endif
+
+
 ;	Find address of XIOS console output routine
 
 	lhld	0001h		; get warmstart entry in the XIOS jump table
@@ -967,6 +1095,7 @@ nwstat:				; C = Slave #
 cfgadr:
 	lxi	h,configtbl
 	ret
+
 
 ;	Send Message on Network
 
@@ -1065,15 +1194,18 @@ release$MX:			; send back requester transmit MX message
 	endif
 
 ;	Receive Message from Network
+
 rcvmsg:				; DE = message addr
 				;  C = Slave #
 	mov	b,c
+
 receive:
 	xchg
 	push	h
 	call	get$ENQ
 
 ; 	a return to this point indicates an error
+
 receive$retry:
 	ei			; re-enable other processes
 
@@ -1322,6 +1454,29 @@ Setup:
 	mov	m,d		; sysdatpage(9&10) = co.configtbl
 				; filling in the config tbl address is the
 				; the server processes' cue to start
+
+	if	modem
+; 	Initialize the modem
+
+	mvi	c,CR
+	mvi	b,slvmodem
+	call	Charout
+	mvi	c,'Z'
+	call	Charout
+	mvi	c,CR
+	call	Charout
+
+WtSpace:
+	call	Charin
+	jc	SetupDone
+	ani	07fh
+	cpi	' '
+	jnz	WtSpace
+	mvi	c,'A'
+	call	Charout
+
+SetupDone:
+	endif
 
 	pop	h
 	pop	d
