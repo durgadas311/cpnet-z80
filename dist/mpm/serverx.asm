@@ -1284,6 +1284,7 @@ lgi2:	ldax	d	; MSGBUF.DAT[x]
 	inr	m	; one more requestor logged in...
 	inx	h	; srvcfg.G$VEC
 	; find "0" in G$VEC bitmap
+	; there must be a spot since G$NUM < G$MAX
 	lxi	d,00001h
 	lxi	b,0
 lgi3:	push	d	; off=4
@@ -1296,9 +1297,8 @@ lgi3:	push	d	; off=4
 	dad	h
 	xchg
 	inr	c	; bit number, 0..15
-	jmp	lgi3	; BUG? does not stop after bit 15...
+	jmp	lgi3
 
-	; BUG? C might be 16 here...
 lgi4:	mov	a,e	; set G$VEC bitmap
 	ora	m
 	mov	m,a
@@ -1315,7 +1315,6 @@ lgi4:	mov	a,e	; set G$VEC bitmap
 	dcx	d
 	dcx	d	; SID
 	ldax	d	; requester NID from MSGBUF
-	; BUG? This might trash password if C=16
 	mov	m,a	; record login NID at G$LOG[bit]
 	jmp	lgi6
 
