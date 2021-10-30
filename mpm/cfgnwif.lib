@@ -1,0 +1,100 @@
+; User-Configurable Parameters (These should be the only changes needed)
+
+nmb$rqstrs	equ	7	; Number of requesters supported at one time
+nmb$bufs	equ	nmb$rqstrs+1	; Number of message buffers
+srvr$stk$len	equ	150	; server process stack size
+qcb$out$buf	equ	2*nmb$bufs	; length of qcb$out buffer
+;
+; ASCII control characters
+cr	equ	13
+lf	equ	10
+eof	equ	26
+
+; BDOS function numbers
+listf	equ	5
+drivef	equ	14
+openf	equ	15
+closef	equ	16
+searchf	equ	17
+nextf	equ	18
+rseqf	equ	20
+wseqf	equ	21
+makef	equ	22
+dmaf	equ	26
+getalvf	equ	27
+wprotf	equ	28
+userf	equ	32
+rrndf	equ	33
+wrndf	equ	34
+freef	equ	39
+defpwdf	equ	106
+
+; CP/NET function numbers
+loginf	equ	64
+logoutf	equ	65
+netend	equ	76	; end of CP/NET reserved
+
+; XDOS function numbers
+makeqf	equ	134
+openqf	equ	135
+readqf	equ	137
+crdqf	equ	138
+writqf	equ	139
+delayf	equ	141
+dispatf	equ	142
+makepf	equ	144
+sysdatf	equ	154
+getpdf	equ	156
+attlstf	equ	158
+detlstf	equ	159
+setlstf	equ	160
+getlstf	equ	164
+
+; UQCB elements
+Q$PTR	equ	0
+Q$MSG	equ	2
+Q$NAME	equ	4	; 8 bytes long
+Q$LEN	equ	12
+
+; CP/NET message buffer (MSGBUF) layout
+FMT	equ	0	; 00 for requests, 01 for responses
+DID	equ	1	; Dest node ID (target)
+SID	equ	2	; Source node ID (sender)
+FNC	equ	3	; BDOS/NDOS function number
+SIZ	equ	4	; payload length, -1 (00 means 1 byte)
+DAT	equ	5	; start of payload
+TMP	equ	DAT+1+128	; unused space, when searchf/nextf used.
+				; Only DAT+2+F$LEN used by searchf reqs,
+				; DAT+1+D$LEN for responses.
+				; other intervening functions could destroy,
+				; possibly breaking searches.
+M$LEN	equ	DAT+256+1	; Total, max, length of CP/NET message
+
+; CP/NET Server config table, in NetWrkIF
+G$STS	equ	0	; server status byte
+G$NID	equ	1	; server node ID
+G$MAX	equ	2	; Maximum number of requesters supported
+G$NUM	equ	3	; Number of requesters currently logged-in
+G$VEC	equ	4	; 16-bit vector of login slots
+G$LOG	equ	6	; Array[16] of logged-in NIDs, per G$VEC
+G$PWD	equ	22	; login password (8 bytes)
+G$LEN	equ	22	; length exported, password never revealed.
+G$ALL	equ	30	; total length
+
+; NOTE: CP/NET "compatability attributes" are kept in
+; the server process descriptor "PD extent high byte",
+; at offset 29 in PD.
+P$CONLST equ	14	; CON:/LST: device
+P$DSEL	equ	22	; DISK SLCT
+P$DCNT	equ	23	; offset of DCNT,SEARCHL,SEARCHA in PD
+P$EXT	equ	28	; offset of "PD EXTENT" in PD
+P$ATTR	equ	P$EXT+1	; CP/NET compat attrs in PD
+P$BC	equ	46	; BC register in PD
+P$LEN	equ	52	; PD length
+
+; System Info
+S$CPNET	equ	9	; CP/NET master configuration table address
+S$TEMP	equ	196	; Temporary file drive
+
+; These must match actual layout in originating files...
+qcb$in$len	equ	26	; length of input QCBs
