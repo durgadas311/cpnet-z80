@@ -35,77 +35,51 @@ resadr:	dw	$-$		; pointer to RES part
 	dw	0c7c7h,0c7c7h,0c7c7h
 stk0:	dw	setup
 
+rqtb$len equ	7	; caution when changing this:
+			; init routine must also change.
+; rqstr$table struct:
+;	ds	1	; requester NID or 0ffh, init to 0ffh
+;	ds	2	; UQCB.POINTER, init to qcb$in$X
+;	ds	2	; UQCB.MSGPTR, init to $+2 (msgptr buffer)
+;	ds	2	; msgptr buffer, set by readqf
+; This table associates requesters with server processes (NtwrkQI)
 rqstr$table:
-;requester 0 control block
-	db	0ffh		; requester ID (marked not in use)
-	dw	$-$		; UQCB:  QCB pointer
-	dw	$+2		;	 pointer to queue message
-	dw	$-$		; pointer to msg buffer (loaded on receive)
-rqtb$len equ	$-rqstr$table
-;requester 1 control block
-	db	0ffh		; requester ID (marked not in use)
-	dw	$-$		; UQCB:  QCB pointer
-	dw	$+2		;	 pointer to queue message
-	dw	$-$		; pointer to msg buffer (loaded on receive)
-;requester 2 control block
-	db	0ffh		; requester ID (marked not in use)
-	dw	$-$		; UQCB:  QCB pointer
-	dw	$+2		;	 pointer to queue message
-	dw	$-$		; pointer to msg buffer (loaded on receive)
-;requester 3 control block
-	db	0ffh		; requester ID (marked not in use)
-	dw	$-$		; UQCB:  QCB pointer
-	dw	$+2		;	 pointer to queue message
-	dw	$-$		; pointer to msg buffer (loaded on receive)
-;requester 4 control block
-	db	0ffh		; requester ID (marked not in use)
-	dw	$-$		; UQCB:  QCB pointer
-	dw	$+2		;	 pointer to queue message
-	dw	$-$		; pointer to msg buffer (loaded on receive)
-;requester 5 control block
-	db	0ffh		; requester ID (marked not in use)
-	dw	$-$		; UQCB:  QCB pointer
-	dw	$+2		;	 pointer to queue message
-	dw	$-$		; pointer to msg buffer (loaded on receive)
-;requester 6 control block
-	db	0ffh		; requester ID (marked not in use)
-	dw	$-$		; UQCB:  QCB pointer
-	dw	$+2		;	 pointer to queue message
-	dw	$-$		; pointer to msg buffer (loaded on receive)
+	rept	nmb$rqstrs
+	ds	rqtb$len
+	endm
 
-; Output user queue control block
+; Output user queue control block (initialized, not opened)
 uqcb$out$0:
-	dw	$-$		; pointer to QCB
+	dw	$-$		; pointer to QCB (init to qcb$out$0)
 	dw	out$buffer$ptr	; pointer to queue message
-
 out$buffer$ptr:
 	ds	2		; a queue read will return the message
 				; buffer pointer in this location
 
-; Buffer Control Block: 0 indicates buffer is free for receiving a message
+; Buffer Control Block:
+; 000h indicates buffer is free for receiving a message,
 ; 0ffh indicates that the buffer is in use
+buf$cb:	rept	nmb$bufs
+	db	0
+	endm
 
-buf$cb:		rept	nmb$bufs
-		db	0
-		endm
-
-; Message Buffer Storage Area
-
+; Message Buffer Storage Area, allocaed via buf$cb
 msg$buffers:	rept	nmb$bufs
 		ds	M$LEN
 		endm
 
-; NETWRKIF Utility Routines
 bdos$adr:	dw	$-$
 CFGADR:		dw	$-$
 
+qcbname:	db	'NtwrkQIX'
+
+; NETWRKIF Utility Routines
+
 ; Operating system linkage routine
-monx:
-	lhld	bdos$adr
+monx:	lhld	bdos$adr
 	pchl
 
 ; Double word subtract: DE = HL - DE
-
 dw$sub:
 	mov	a,l
 	sub	e
@@ -113,6 +87,47 @@ dw$sub:
 	mov	a,h
 	sbb	d
 	mov	d,a
+	ret
+
+; DE = qcb$in$X, A = nmb$rqstrs-X
+; Must preserve HL, DE, A
+init$iqcb:
+	push	h
+	push	d
+	push	psw
+	mov	c,a
+	mvi	a,nmb$rqstrs
+	sub	c
+	mov	c,a
+	xchg
+	inx	h
+	inx	h	; QCB.NAME
+	lxi	d,qcbname
+	mvi	b,7	; all but the 'X'
+iq0:	ldax	d
+	mov	m,a
+	inx	d
+	inx	h
+	dcr	b
+	jnz	iq0
+	mov	a,c
+	adi	90h
+	daa
+	aci	40h
+	daa
+	mov	m,a	; 'X': 0..F
+	inx	h	; QCB.MSGLEN
+	xra	a
+	mvi	m,2
+	inx	h
+	mov	m,a
+	inx	h	; QCB.NMBMSGS
+	mvi	m,1
+	inx	h
+	mov	m,a
+	pop	psw
+	pop	d
+	pop	h
 	ret
 
 ; Routine to scan requester control blocks for a match with the received 
@@ -130,7 +145,6 @@ dw$sub:
 ;	no match and no available RCB's:
 ;		   A = 0FFh
 ;		  CY = 1
-
 scan$table:
 	lxi	h,rqstr$table		;point to the start of the RCB table
 	mvi	b,nmb$rqstrs
@@ -176,10 +190,8 @@ fr$t2:
 
 
 
-; Network I/F Receiver Process
-
-
-setup:					;initialize NETWRKIF
+; Initial Network I/F Receiver Process (initialize all else)
+setup:		;initialize NETWRKIF
 	lhld	resadr
 	mov	e,m
 	inx	h
@@ -193,18 +205,33 @@ setup:					;initialize NETWRKIF
 	; HL = 'networkio' in RESNWIF.RSP
 	lxi	d,P$LEN
 	dad	d	; point to qcb$in$0
-	push	d
-	lxi	d,rqstr$table+1	; UQCB0.Q$PTR
+	push	d	; save qcb$in$0 for makeqf loop
+	lxi	d,rqstr$table
 	mvi	a,nmb$rqstrs
-setup0:	xchg
+setup0:	xchg	; DE = qcb$in$X, A = nmb$rqstrs-X
+	call	init$iqcb
+	mvi	m,0ffh	; no requester (yet)
+	inx	h
 	mov	m,e
 	inx	h
-	mov	m,d	; set UQCB0.Q$PTR = qcb$in$0 ...
-	lxi	b,rqtb$len-1	; sizeof rqstr$table[]-1
-	dad	b
+	mov	m,d	; set UQCB0.POINTER = qcb$in$X
+	inx	h
+	; get $+2... set in UQCB.MSGADR
+	push	d
+	mov	e,l
+	mov	d,h
+	inx	d
+	inx	d
+	mov	m,e
+	inx	h
+	mov	m,d
+	inx	h
+	pop	d
+	inx	h
+	inx	h	; next rqstr$table entry
 	xchg
 	lxi	b,qcb$in$len	; sizeof input QCB
-	dad	b
+	dad	b		; qcb$in$X = next
 	dcr	a
 	jnz	setup0
 	; HL = qcb$out$0
@@ -216,11 +243,11 @@ setup0:	xchg
 	; There are 'nmb$rqstrs' qcb$in queues plus 1 qcb$out.
 	mvi	b,nmb$rqstrs+1		;loop counter for making n+1 queues
 	mvi	c,makeqf		;make queue function code
-	pop	d	;qcb$in$0
+	pop	d	; DE = qcb$in$0
 makeq:					;make all input and output queue(s)
 	push	b
 	push	d
-	call	monx
+	call	monx	; create queue (last one is qcb$out$0)
 	pop	h
 	lxi	d,qcb$in$len
 	dad	d
@@ -238,7 +265,7 @@ makeq:					;make all input and output queue(s)
 	di
 	mov	m,e
 	inx	h
-	mov	m,d
+	mov	m,d	; this allows SERVER.RSP to continue
 	ei
 	call	NTWKIN
 ;	ora	a
@@ -261,18 +288,20 @@ poll0:
 	lxi	h,fnc			;get message function code
 	dad	d
 	mov	a,m
-	dcx	h
+	dcx	h	; SID - our NID
+	dcx	h	; DID - requester NID
 	cpi	logoutf			;is it a logoff?
 	jnz	output2
-	; BUG? This is a *response* to a LOGOFF... need DID not SID?
-	mov	a,m			;load SID
+	mov	a,m			;load NID
 	call	free$rqstr$tbl		;yes-->free up the server process
 output2:
-	pop	b
+	pop	b	; BC=MSGBUF
 	push	b
 	call	SNDMSG
 	; TODO: handle errors?
 	pop	h			;retrieve message pointer
+	; Must work backwards from MSGBUF to find index into buf$cb...
+	; TODO: find a better way...
 	lxi	d,msg$buffers		;DE = pointer - message buffer base
 	call	dw$sub
 	lxi	b,buf$cb		;BC = DE/buf$len + buf$cb

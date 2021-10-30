@@ -18,6 +18,8 @@
 	maclib cfgnwif
 
 ; Items required in common memory...
+; All must appear exactly in this order, so banked module
+; can find/init/use them.
 bdosadr:
 	dw	$-$		; RSP XDOS entry point
 
@@ -51,96 +53,12 @@ networkio:			; Receiver Process
 	ds	2		; scratch
 
 ; Input queue control blocks
+qcb$in$0:	; et al.
+	rept	nmb$rqstrs
+	ds	qcb$in$len
+	endm
 
-qcb$in$0:
-	ds	2		; link
-	db	'NtwrkQI0'	; name
-	dw	2		; msglen
-	dw	1		; nmbmsgs
-	ds	2		; dqph
-	ds	2		; nqph
-	ds	2		; msgin
-	ds	2		; msgout
-	ds	2		; msgcnt
-	ds	2		; buffer
- if $-qcb$in$0 <> qcb$in$len
-	error	'qcb$in$len wrong'
- endif
-
-qcb$in$1:
-	ds	2		; link
-	db	'NtwrkQI1'	; name
-	dw	2		; msglen
-	dw	1		; nmbmsgs
-	ds	2		; dqph
-	ds	2		; nqph
-	ds	2		; msgin
-	ds	2		; msgout
-	ds	2		; msgcnt
-	ds	2		; buffer
-
-qcb$in$2:
-	ds	2		; link
-	db	'NtwrkQI2'	; name
-	dw	2		; msglen
-	dw	1		; nmbmsgs
-	ds	2		; dqph
-	ds	2		; nqph
-	ds	2		; msgin
-	ds	2		; msgout
-	ds	2		; msgcnt
-	ds	2		; buffer
-
-qcb$in$3:
-	ds	2		; link
-	db	'NtwrkQI3'	; name
-	dw	2		; msglen
-	dw	1		; nmbmsgs
-	ds	2		; dqph
-	ds	2		; nqph
-	ds	2		; msgin
-	ds	2		; msgout
-	ds	2		; msgcnt
-	ds	2		; buffer
-
-qcb$in$4:
-	ds	2		; link
-	db	'NtwrkQI4'	; name
-	dw	2		; msglen
-	dw	1		; nmbmsgs
-	ds	2		; dqph
-	ds	2		; nqph
-	ds	2		; msgin
-	ds	2		; msgout
-	ds	2		; msgcnt
-	ds	2		; buffer
-
-qcb$in$5:
-	ds	2		; link
-	db	'NtwrkQI5'	; name
-	dw	2		; msglen
-	dw	1		; nmbmsgs
-	ds	2		; dqph
-	ds	2		; nqph
-	ds	2		; msgin
-	ds	2		; msgout
-	ds	2		; msgcnt
-	ds	2		; buffer
-
-qcb$in$6:
-	ds	2		; link
-	db	'NtwrkQI6'	; name
-	dw	2		; msglen
-	dw	1		; nmbmsgs
-	ds	2		; dqph
-	ds	2		; nqph
-	ds	2		; msgin
-	ds	2		; msgout
-	ds	2		; msgcnt
-	ds	2		; buffer
-
-; Output queue control blocks
-
+; Output queue control block
 qcb$out$0:
 	ds	2		; link
 	db	'NtwrkQO0'	; name

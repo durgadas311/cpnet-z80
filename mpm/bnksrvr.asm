@@ -1376,7 +1376,7 @@ sndbak:	lxi	h,@msgqi+0	; off=0
 	xchg			; HL=MSGBUF
 	inr	m		; FMT 00 -> 01
 	inx	h
-	mov	b,m		; DID
+	mov	b,m		; swap DID, SID
 	inx	h
 	mov	a,m		; SID
 	mov	m,b		; SID = DID
