@@ -2,7 +2,7 @@
 ;
 ; In addition to the standard IP, MASK, MAC, and GATEWAY, requires:
 ; PMAGIC - server node ID (00-FE)
-; PSID - listening port number
+; PDMAC - (first 2 bytes) listening port number
 
 	maclib	z80
 
@@ -33,7 +33,7 @@ rxbuf0	equ	000$11$000b	; base pattern for Rx buffer
 ir	equ	21
 sir	equ	23
 pmagic	equ	29
-psid	equ	36	; 2-byte port number for listening
+pdmac	equ	30	; 2-byte port number for listening
 
 ; socket regs, relative
 sn$mr	equ	0
@@ -350,7 +350,7 @@ NTWKIN:
 	jz	err
 	stx	a,+1 ; our server ID
 	sta	srvid
-	mvi	d,psid
+	mvi	d,pdmac
 	call	getwiz2
 	shld	lport	; listening port
 	mvi	a,active
