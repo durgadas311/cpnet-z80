@@ -44,12 +44,15 @@ gwmsg:	db	'Gateway:  $'
 ntmsg:	db	'Subnet:   $'
 mcmsg:	db	'MAC:      $'
 ipmsg:	db	'IP Addr:  $'
+ltmsg:	db	'Srv Port: $'
 
-usage:	db	'WIZCFG version 1.4',CR,LF
+usage:	db	'WIZCFG version 1.5',CR,LF
 	db	'Usage: WIZCFG {G|I|S} ipadr',CR,LF
 	db	'       WIZCFG M macadr',CR,LF
 	db	'       WIZCFG N cid',CR,LF
+	db	'       WIZCFG P port',CR,LF
 	db	'       WIZCFG {0..7} sid ipadr port [keep]',CR,LF
+	db	'       WIZCFG {0..7} X',CR,LF
 if NVRAM
 	db	'       WIZCFG R',CR,LF
 	db	'       WIZCFG L {A:..P:,LST:}',CR,LF
@@ -62,6 +65,8 @@ if NVRAM
 else
 	db	'Sets network config in W5500',CR,LF
 endif
+	db	'P cmd is for servers only',CR,LF
+	db	'{0..7},L,T,X are for requesters only',CR,LF
 	db	'$'
 done:	db	'Set',CR,LF,'$'
 sock:	db	'Socket '
@@ -160,6 +165,8 @@ endif
 	jz	pars3
 	cpi 	'N'
 	jz	pars4
+	cpi 	'P'
+	jz	parsP
 if NVRAM
 	cpi 	'L'
 	jz	locdv
@@ -175,6 +182,9 @@ endif
 
 ; Parse new Socket config
 	sta	sokn
+	mov	a,m	; peek at arg
+	cpi	'X'	; delete socket?
+	jz	delsok
 	; parse <srvid> <ipadr> <port>
 	mvi	c,0	; NUL won't ever be seen
 	call	parshx
@@ -279,15 +289,7 @@ ntopn:	lxi	h,newsok
 
 if NVRAM
 nvsok:
-	lda	sokn
-	sui	'0'	; 00000sss
-	rrc
-	rrc
-	rrc		; sss00000 or sokn * 32
-	mov	e,a
-	mvi	d,0
-	lxix	nvbuf+32	; socket 0 buffer
-	dadx	d
+	call	getnvsok
 	lhld	nskpt	; big endian data, little endian load...
 	stx	l,SnPORT
 	stx	h,SnPORT+1
@@ -303,7 +305,55 @@ nvsok:
 	lda	nskkp
 	stx	a,NvKPALVTR	; force to 00 if not set
 	jmp	nvsetit
+
+; Returns IX=socket 'sokn' in nvbuf
+getnvsok:
+	lda	sokn
+	sui	'0'	; 00000sss
+	rrc
+	rrc
+	rrc		; sss00000 or sokn * 32
+	mov	e,a
+	mvi	d,0
+	lxix	nvbuf+32	; socket 0 buffer
+	dadx	d
+	ret
 endif
+
+delsok:	; delete the socket config
+if NVRAM
+	lda	direct
+	ora	a
+	jnz	delsok0
+	call	getnvsok
+	xra	a
+	dcr	a	; FF
+	stx	a,SnPORT
+	stx	a,SnPORT+1
+	jmp	nvsetit
+delsok0:
+endif
+	xra	a
+	sta	nskpt
+	sta	nskpt+1
+	call	getsokn
+	mov	d,a
+	lxi	h,nskpt
+	mvi	e,SnPORT
+	mvi	b,2
+	jmp	setit
+
+parsP:	; MP/M Server listening port
+	call	parsnm
+	jc	help
+	mov	a,d
+	sta	wizmag+1
+	mov	a,e
+	sta	wizmag+2
+	lxi	h,wizmag+1
+	lxi	d,PDMAC
+	mvi	b,2
+	jmp	setit0
 
 pars4:
 	call	parshx
@@ -378,6 +428,8 @@ nvshow:	; show config from NVRAM
 	call	ship
 	lxi	h,nvbuf+SHAR
 	call	shmac
+	lxi	h,nvbuf+PDMAC
+	call	shlstn
 	lxi	h,nvbuf+32	; socket 0 buffer
 	mvi	b,nsock
 shnvsk0:
@@ -598,7 +650,7 @@ endif
 	call	wizget
 	lxi	h,wizmag
 	lxi	d,PMAGIC
-	mvi	b,1
+	mvi	b,3	; get possible server listening port
 	call	wizget
 
 	lda	wizmag
@@ -618,6 +670,9 @@ endif
 
 	lxi	h,mac
 	call	shmac
+
+	lxi	h,wizmag+1
+	call	shlstn
 
 	lxi	d,SOCK0 shl 8	; E=0
 	mvi	b,nsock
@@ -1126,11 +1181,12 @@ mslp1:	dcx	h
 endif
 
 ; Standard W5500 register offsets
-GAR	equ	1	; offset of GAR, etc.
-SUBR	equ	5
-SHAR	equ	9
-SIPR	equ	15
-PMAGIC	equ	29	; used for node ID
+GAR	equ	1	; (4) offset of GAR, etc.
+SUBR	equ	5	; (4)
+SHAR	equ	9	; (6)
+SIPR	equ	15	; (4)
+PMAGIC	equ	29	; (1) used for node ID
+PDMAC	equ	30	; (6) 2 used for server listening port
 
 nsock	equ	8
 SOCK0	equ	000$01$000b
@@ -1252,6 +1308,25 @@ shid:	push	psw
 	call	chrout
 	jmp	crlf
 
+shlstn:
+	mov	d,m
+	inx	h
+	mov	e,m
+	mov	a,d
+	ora	e
+	rz	; 0000 = invalid port
+	mov	a,d
+	ana	e
+	inr	a
+	rz	; FFFF = invalid port
+	push	d
+	lxi	d,ltmsg
+	mvi	c,print
+	call	bdos
+	pop	d
+	call	dec16
+	jmp	crlf
+
 ; HL = IP addr, DE = prefix msg
 ship:	push	h
 	mvi	c,print
@@ -1337,6 +1412,7 @@ netcfg:	dw	0
 count:	db	0
 
 wizmag:	db	0	; used as client (node) ID
+	db	0,0	; used as server listening port
 
 comregs:
 gw:	ds	4

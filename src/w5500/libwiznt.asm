@@ -22,6 +22,7 @@ SUBR	equ	5
 SHAR	equ	9
 SIPR	equ	15
 PMAGIC	equ	29	; used for node ID
+PDPORT	equ	30	; used for server listening port
 
 nsock	equ	8
 SOCK0	equ	000$01$000b
@@ -222,7 +223,7 @@ wizcf0:
 	lxi	h,nvbuf+PMAGIC
 	mvi	d,0
 	mvi	e,PMAGIC
-	mvi	b,1
+	mvi	b,3
 	call	wizset
 	lxix	nvbuf+32
 	mvi	d,SOCK0
