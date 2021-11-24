@@ -72,6 +72,7 @@ srvtbl:	ds	nsocks
 lport:	dw	0	; port to listen on
 srvid:	db	0	; this server's NID
 cursok:	db	0	; current socket select patn
+curskp:	dw	0	; current socket srvtbl[x]
 curptr:	dw	0	; into chip mem
 msgptr:	dw	0
 msglen:	dw	0
@@ -215,34 +216,26 @@ gs1:
 	jrnz	gs1
 	stc	; not found
 	ret
-gs0:	; found...
+gs0:	; found... DE=srvtbl[x]
+	push	d
 	mvi	a,nsocks
 	sub	c	; socket num 00000sss
 	rrc		; s00000ss
 	rrc		; ss00000s
 	rrc		; sss00000
 	sta	cursok
+	sded	curskp
 	ori	sock0	; sss01000
 	mov	d,a
 	mvi	e,sn$sr
 	call	getwiz1
+	pop	h	; HL=srvtbl[x]
 	cpi	ESTAB
-	rz
-	cpi	INIT
-	jrz	gs3
-	; try to open socket...
-	mvi	a,OPEN
-	call	wizcmd
-	cpi	INIT
-	jrnz	gs2
-gs3:	mvi	a,CONNECT
-	call	wizcmd
-	mvi	c,00001011b	; CON, DISCON, or TIMEOUT
-	call	wizist	; returns when one is set
-	cma	; want "0" on success
-	ani	00000001b	; CON
-	rz
-gs2:	stc	; failed to open
+	rz	; D=socket
+	; lost connection, reset things
+	mvi	m,0ffh
+	; polling should set back to LISTEN
+	stc	; failed
 	ret
 
 ; HL=socket relative pointer (TX_WR)
@@ -318,24 +311,22 @@ ws0:	pop	psw
 	ret
 
 ; Setup socket for LISTENing, unless already LISTN or ESTAB.
+; A=Sn_SR, D=socket, HL=srvtbl[socket]
 ; Destroys B, C, E (D r/w bit)
 do$listen:
-	mvi	e,sn$sr
-	call	getwiz1
-	cpi	ESTAB
-	rz
-	cpi	LISTN
-	rz
-	; Force closed (?)
+	mvi	m,0ffh	; flag "no connection"
+	cpi	CLOSED
+	jrz	dl0
 	mvi	a,CLOSE
 	call	wizcmd	; destroys B
+dl0:
 	; try to open socket...
 	mvi	a,OPEN
-	call	wizcmd
+	call	wizcmd	; destroys B
 	cpi	INIT
 	rnz	; flag error?
 	mvi	a,LISTEN
-	call	wizcmd
+	call	wizcmd	; destroys B
 	cpi	LISTN
 	ret	; NZ indicates error
 
@@ -346,11 +337,11 @@ NTWKIN:
 	lixd	CFGADR
 	lxi	d,pmagic
 	call	getwiz1
-	ora	a
+	cpi	0ffh	; the only illegal value for servers
 	jz	err
 	stx	a,+1 ; our server ID
 	sta	srvid
-	mvi	d,pdmac
+	mvi	e,pdmac
 	call	getwiz2
 	shld	lport	; listening port
 	mvi	a,active
@@ -359,8 +350,7 @@ NTWKIN:
 	mvi	c,nsocks
 	lxi	h,srvtbl
 	mvi	d,sock0
-nwin0:	mvi	m,0ffh	; no requester, yet
-	inx	h
+nwin0:
 	push	b
 	mvi	e,sn$mr
 	mvi	a,1	; TCP/IP mode
@@ -369,10 +359,13 @@ nwin0:	mvi	m,0ffh	; no requester, yet
 	lhld	lport
 	mvi	e,sn$prt
 	call	putwiz2	; set port
-	pop	h
+	mvi	e,sn$sr
+	call	getwiz1	; A=Sn_SR
+	pop	h	; HL=srvtbl[x]
 	call	do$listen
 	; TODO: errors?
 	pop	b
+	inx	h
 	mvi	a,001$00$000b
 	add	d	; next socket
 	mov	d,a
@@ -451,46 +444,81 @@ serr:
 ; Returns 0 if nothing to do, 0ffh if RECV ready at cursok.
 ; Always scans all sockets, to ensure dropped coonections get re-initialized.
 NWPOLL:
-	lxi	d,(sock0 shl 8) + sn$sr
+	mvi	d,sock0
 	mvi	b,nsocks
 	mvi	l,00000100b	; RECV data available bit
 	xra	a
-	push	psw
+	push	psw	; reinit=false
 chk2:
+	mvi	e,sn$sr
 	call	getwiz1
 	cpi	ESTAB
 	jrz	chk3
 	cpi	LISTN
 	jrz	chk5	; nothing for us to do, yet
 	; else, try to re-init
-	call	do$listen
+	pop	psw
+	ori	0ffh	; reinit=true
+	push	psw
 chk5:	mvi	a,001$00$000b
 	add	d	; next socket
 	mov	d,a
 	djnz	chk2
+	; if we get through all sockets (and no RECV),
+	; re-init any that require it.
 	pop	psw
+	rz		; if (not reinit) nothing to do
+	; check all sockets and re-open as needed
+	mvi	d,sock0
+	mvi	b,nsocks
+	lxi	h,srvtbl
+chk4:
+	mvi	e,sn$sr
+	call	getwiz1
+	cpi	ESTAB
+	jrz	chk1
+	cpi	LISTN
+	jrz	chk1
+	push	b
+	call	do$listen	; destroys E,B
+	pop	b
+chk1:
+	inx	h
+	mvi	a,001$00$000b
+	add	d	; next socket
+	mov	d,a
+	djnz	chk4
+	xra	a	; nothing to RECV yet
 	ret
-chk3:	call	wizsts
+chk3:
+	call	wizsts
 	ana	l	; RECV data available
 	jrz	chk5	; not ready...
-chk4:	pop	psw
-	jrnz	chk6	; already found one...
+	pop	psw	; discard reinit flag
 	mov	a,d
+	ani	11100000b ; remove chaff
 	sta	cursok
-	ori	0ffh
-chk6:	push	psw
-	jr	chk5
+	; compute srvtbl[x] address
+	rlc
+	rlc
+	rlc
+	mov	e,a
+	mvi	d,0
+	lxi	h,srvtbl
+	dad	d
+	shld	curskp
+	ori	0ffh	; ready=true
+	ret
 
 ;	Receive Message from Network
 ;	BC = message addr
 ;	NWPOLL must be called first, and return .TRUE.
 RCVMSG:
-	lda	cursok	; must be non-zero (will be if valid)
-	ora	a
-	jrz	err	; don't count as NIC error, more user error.
+	sbcd	msgptr
+	lda	cursok	; can't check for invalid
+	ori	sock0
 	mov	d,a	; socket that is ready...
 	; D=socket
-	sbcd	msgptr
 	lixd	msgptr
 	lxi	h,0
 	shld	totlen
@@ -538,6 +566,10 @@ rm0:	; D must be socket base...
 	dad	d	; subtract what we already have
 	jrnc	rerr	; something is wrong, if still neg
 	shld	totlen
+	lded	curskp
+	; TODO: check/validate? (what if different?)
+	ldx	a,+2	; SID - sender (requester)
+	stax	d	; set SID, use same socket for reply
 	lda	cursok	; must restore D=socket BSB
 	ori	sock0
 	mov	d,a

@@ -1,6 +1,6 @@
-; User-Configurable Parameters (These should be the only changes needed)
+; Constants for MP/M CP/NET Server
+; (use caution if making changes)
 
-nmb$rqstrs	equ	7	; Number of requesters supported at one time
 nmb$bufs	equ	nmb$rqstrs+1	; Number of message buffers
 srvr$stk$len	equ	150	; server process stack size
 qcb$out$buf	equ	2*nmb$bufs	; length of qcb$out buffer
@@ -12,6 +12,7 @@ eof	equ	26
 
 ; BDOS function numbers
 listf	equ	5
+printf	equ	9
 drivef	equ	14
 openf	equ	15
 closef	equ	16
@@ -43,6 +44,8 @@ writqf	equ	139
 delayf	equ	141
 dispatf	equ	142
 makepf	equ	144
+attconf	equ	146
+detconf	equ	147
 sysdatf	equ	154
 getpdf	equ	156
 attlstf	equ	158
@@ -92,7 +95,7 @@ P$ATTR	equ	P$EXT+1	; CP/NET compat attrs in PD
 P$BC	equ	46	; BC register in PD
 P$LEN	equ	52	; PD length
 
-; System Info
+; System Info in System Data Page
 S$CPNET	equ	9	; CP/NET master configuration table address
 S$TEMP	equ	196	; Temporary file drive
 

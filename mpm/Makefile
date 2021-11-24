@@ -12,8 +12,9 @@ VCPM = vcpm
 PREREQ = tmp/z80.lib tmp/cfgnwif.lib
 
 all: $(PREREQ) \
-	netwrkif.brs netwrkif.rsp \
-	server.brs server.rsp
+	netservr.rsp netservr.brs
+#	netwrkif.brs netwrkif.rsp \
+#	server.brs server.rsp
 
 tmp/%.asm: %.asm
 	@mkdir -p tmp
@@ -27,6 +28,15 @@ tmp/%.lib: %.lib
 	@mkdir -p tmp
 	unix2dos -n $^ $@
 
+%.com: %.hex
+	$(VCPM) hexcom $*
+
+netservr.rsp: resntsrv.rel
+	$(VCPM) link $@=resntsrv"[os,nr]"
+
+netservr.brs: bnkntsrv.rel ntwrkrcv.rel servers.rel nios.rel
+	$(VCPM) link $@=bnkntsrv,ntwrkrcv,servers,nios"[os,nr]"
+
 netwrkif.brs: bnknwif.rel nios.rel
 	$(VCPM) link $@=bnknwif,nios"[os,nr]"
 
@@ -38,6 +48,9 @@ netwrkif.rsp: resnwif.rel
 
 server.rsp: ressrvr.rel
 	$(VCPM) link $@=ressrvr"[os,nr]"
+
+%.hex: tmp/%.asm
+	$(VCPM) mac $* '$$AEHDPDSZLE'
 
 %.rel: tmp/%.asm
 	$(VCPM) rmac e:$* '$$RDPDSZLE'
