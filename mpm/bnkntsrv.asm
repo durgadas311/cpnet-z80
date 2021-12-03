@@ -56,6 +56,14 @@ nmutex:	dw	0	; filled in by 'setup'
 ;	ds	2	; no MSGADR
 ;	ds	8	; no NAME - not opened
 
+ if use$mxdisk
+ntmtx:	dw	0	; filled in by openqf
+	dw	0	; no MSGADR
+	db	'MXDisk  '
+ else
+ntmtx	equ	nmutex
+ endif
+
 qcbname:	db	'NtwrkQIX'
 
 ; NETWRKIF Utility Routines
@@ -64,11 +72,11 @@ qcbname:	db	'NtwrkQIX'
 bdos:	lhld	bdos$adr
 	pchl
 
-nlock:	lxi	d,nmutex
+nlock:	lxi	d,ntmtx
 	mvi	c,readqf
 	jmp	bdos
 
-nunlock: lxi	d,nmutex
+nunlock: lxi	d,ntmtx
 	mvi	c,writqf
 	jmp	bdos
 
@@ -81,6 +89,13 @@ setup:
 	mov	d,m
 	xchg
 	shld	bdos$adr	; snag a copy for easier use
+ if use$mxdisk
+	lxi	d,ntmtx
+	mvi	c,openqf
+	call	bdos
+	ora	a
+	jnz	failed	; should never happen
+ endif
 	; To avoid having to open all the queues, manually fixup
 	; the UQCB structures to point at QCBs
 	mvi	c,getpdf
@@ -123,12 +138,16 @@ setup:
 	ora	a	; (each should be sleeping on input Q)
 	jnz	failed
 	; now wait for start signal...
-	call	nlock	; sleeps until SRVSTART
+	lxi	d,nmutex
+	mvi	c,readqf
+	call	bdos	; sleeps until SRVSTART
 	; ...sysadmin has released us
 	call	NTWKIN
 	ora	a
 	jnz	failed
-	call	nunlock
+ if not use$mxdisk
+	call	nunlock	; allow access to NIOS now
+ endif
 	jmp	recvr	; now perform our designated function...
 
 failed:

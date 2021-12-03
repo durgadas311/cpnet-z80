@@ -12,3 +12,7 @@ nmb$rqstrs	equ	7	; Number of requesters supported at one time
 ; In addition, the host XIOS must support polling and provide
 ; some method to access the poll table.
 polling		equ	0
+
+; If network and disk share hardware (SPI adapter),
+; must use same mutex for both to avoid conflicts.
+use$mxdisk	equ	1

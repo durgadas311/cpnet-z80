@@ -74,7 +74,7 @@ mx$netwrk:
 	db	'MXNetwrk'
 	dw	0	; MSGLEN (mutex)
 	dw	1	; NMBMSGS
-	ds	10
+	dw	0,0,0,0,0
 	dw	0	; BUFFER (owning proc)
 
 ; Process Descriptors for all servers
