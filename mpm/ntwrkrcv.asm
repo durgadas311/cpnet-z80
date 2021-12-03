@@ -7,9 +7,9 @@
 ;***************************************************************************
 
 	; This must be linked with a suitable NIOS.REL
-	public	qinit,recvr,rqfree,bffree
-	extrn	bdos,nlock,nunlock
-	extrn	NTWKIN,NTWKST,SNDMSG,RCVMSG,NWPOLL,NTWKER,NTWKDN
+	public	qinit,recvr,rqfree,bffree,logoff
+	extrn	bdos,nlock,nunlock,srvlgo
+	extrn	NTWKIN,NTWKST,SNDMSG,RCVMSG,NWPOLL,NTWKER,NTWKDN,NWLOGO
 
 ;***************************************************************************
 ;***************************************************************************
@@ -205,6 +205,14 @@ fr$t2:	dad	d
 	dcr	c
 	jnz	fr$t1			;keep going--it's in there somewhere
 	ret
+
+; sever all connections to requester.
+; Does not notify NIOS. Typically called from NIOS,
+; which means the mutex is held.
+; A=requester NID
+logoff:
+	call	rqfree	; preserves A
+	jmp	srvlgo	; destroys A
 
 ; Free a CP/NET message BCB, given buffer address
 ; HL=MSGBUF

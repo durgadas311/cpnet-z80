@@ -5,10 +5,10 @@
 	maclib	config
 	maclib	cfgnwif
 
-	public	pinit
+	public	pinit,srvlgo
 	extrn	bdos,cfgadr,nlock,nunlock,nwq0p
-	extrn	bffree
-	extrn	NTWKIN,NTWKST,SNDMSG,RCVMSG,NWPOLL,NTWKER,NTWKDN
+	extrn	bffree,rqfree
+	extrn	NTWKIN,NTWKST,SNDMSG,RCVMSG,NWPOLL,NTWKER,NTWKDN,NWLOGO
 
 SRVNUM	macro	?o
 	lxi	h,@srvno+?o
@@ -1208,7 +1208,12 @@ logout:	pop	h	; off=0 (HL=MSGBUF)
 	inx	h
 	inx	h
 	mvi	m,0	; resp code success
-	lhld	cfgadr
+	call	srvlgo
+	jmp	sndbak	;
+
+; Remove requester from server config.
+; A=requester NID
+srvlgo:	lhld	cfgadr
 	inx	h
 	inx	h
 	mov	c,m	; G$MAX
@@ -1222,7 +1227,7 @@ lgo0:	cmp	m	; search for this NID
 	inx	h
 	dcr	c
 	jnz	lgo0
-	jmp	sndbak	; not logged in, just send success
+	ret	; not logged in, just return
 
 lgo1:	mov	a,b
 	sub	c	; position of requester in array/bitmap
@@ -1248,7 +1253,7 @@ lgo1:	mov	a,b
 	inx	h
 	mov	m,d
 	ei	;------------------- end crit sect
-	jmp	sndbak
+	ret
 
 cmpatr:	mvi	c,sysdatf
 	call	bdos
@@ -1347,21 +1352,38 @@ sndbak:	lxi	h,@msgqi+0	; off=0
 	push	d
 	xchg			; HL=MSGBUF
 	inr	m		; FMT 00 -> 01
-	inx	h
+	inx	h	; DID
 	mov	b,m		; swap DID, SID
-	inx	h
-	mov	a,m		; SID
+	inx	h	; SID
+	mov	a,m
 	mov	m,b		; SID = DID
-	dcx	h
+	mov	b,a		; save SID (requester) for later
+	inx	h	; FNC
+	mov	c,m		; save FNC for later
+	dcx	h	; SID
+	dcx	h	; DID
 	mov	m,a		; DID = SID
+	; B=requester NID, C=FNC
+	; check for logoff
+	mvi	a,logoutf	; a.k.a. "logoff"
+	sub	c	; 00=logoff
+	sui	1	; CY=logoff
+	mov	a,b
+	push	psw	; CY means A=requester NID to log off
 	call	nlock
+	pop	psw
 	pop	b	; BC=MSGBUF
 	push	b
-	call	SNDMSG
 	push	psw
+	call	SNDMSG
+	; TODO: handle error?
+	pop	psw
+	push	psw
+	cc	NWLOGO	; log out requester
 	call	nunlock
 	pop	psw
-	; TODO: handle error?
+	; free requester slot
+	cc	rqfree
 	pop	h	; HL=MSGBUF
 	call	bffree
 	jmp	ntloop		; get (wait for) next message

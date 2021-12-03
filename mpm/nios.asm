@@ -7,8 +7,9 @@
 	maclib	z80
 
 	; Server interface
-	public	NTWKIN, NTWKST, SNDMSG, RCVMSG, NWPOLL, NTWKER, NTWKDN
+	public	NTWKIN,NTWKST,SNDMSG,RCVMSG,NWPOLL,NTWKER,NTWKDN,NWLOGO
 	extrn	CFGADR	; Server Config Table, from NetWrkIF
+	extrn	logoff	; cleanup when detecting broken socket
 	; Caller(s) of SNDMSG, RCVMSG, NWPOLL must mutex.
 
 ; TODO: set all "idle" sockets to LISTEN... each one going
@@ -234,6 +235,7 @@ gs0:	; found... DE=srvtbl[x]
 	rz	; D=socket
 	; lost connection, reset things
 	mvi	m,0ffh
+	; TODO: drop requester from table
 	; polling should set back to LISTEN
 	stc	; failed
 	ret
@@ -315,6 +317,7 @@ ws0:	pop	psw
 ; Destroys B, C, E (D r/w bit)
 do$listen:
 	mvi	m,0ffh	; flag "no connection"
+	; TODO: drop requester from table
 	cpi	CLOSED
 	jrz	dl0
 	mvi	a,CLOSE
@@ -431,6 +434,7 @@ SNDMSG:
 	rz
 	; else TIMEOUT/DISCON
 serr:
+	; TODO: callback to logoff?
 	lhld	CFGADR
 	mov	a,m
 	ori	senderr
@@ -479,6 +483,18 @@ chk4:
 	jrz	chk1
 	cpi	LISTN
 	jrz	chk1
+	mov	e,a	; Sn_SR, destroys E
+	mov	a,m	; possible requester NID
+	cpi	0ffh
+	jrz	chk0
+	push	b
+	push	d
+	push	h
+	cnz	logoff	; destroys all
+	pop	h
+	pop	d
+	pop	b
+chk0:	mov	a,e	; Sn_SR
 	push	b
 	call	do$listen	; destroys E,B
 	pop	b
@@ -586,6 +602,18 @@ rerr:
 err:	mvi	a,0ffh
 NTWKER:	ret
 
+; Called from server process, no other cleanup required.
+NWLOGO:	; close/disconnect requester (A=NID)
+	mov	b,a
+	call	getsrv
+	rc	; already gone
+	mvi	a,CLOSE
+	call	wizcmd	; destroys B
+	lhld	curskp
+	mvi	m,0ffh
+	ret
+
+; Called from NetServr process, no other cleanup required
 NTWKDN:	; close all sockets
 	mvi	b,nsocks
 	mvi	d,sock0

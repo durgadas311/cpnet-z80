@@ -19,7 +19,7 @@
 	extrn	recvr	; The network receiver loop entry
 	extrn	qinit	; QCB/UQCB setup for message queues
 	extrn	pinit	; (Server) process(es) setup
-	extrn	NTWKIN,NTWKST,SNDMSG,RCVMSG,NWPOLL,NTWKER,NTWKDN
+	extrn	NTWKIN,NTWKST,SNDMSG,RCVMSG,NWPOLL,NTWKER,NTWKDN,NWLOGO
 
 ;***************************************************************************
 ;***************************************************************************
