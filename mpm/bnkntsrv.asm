@@ -15,7 +15,7 @@
 ; perform the requested function and then acquire 'nmutex' and send
 ; the response back over network.
 
-	public	bdos,cfgadr,nlock,nunlock,nwq0p
+	public	bdos,cfgadr,cfgcmd,nlock,nunlock,nwq0p
 	extrn	recvr	; The network receiver loop entry
 	extrn	qinit	; QCB/UQCB setup for message queues
 	extrn	pinit	; (Server) process(es) setup
@@ -50,6 +50,7 @@ stk0:	dw	setup
 bdos$adr:	dw	$-$
 cfgadr:		dw	$-$
 nwq0p:		dw	$-$
+cfgcmd:		dw	$-$
 
 ; UQCB for 'MXNetwrk' - pre-filled (no open)
 nmutex:	dw	0	; filled in by 'setup'
@@ -125,6 +126,9 @@ setup:
 	lxi	d,nmb$rqstrs * qcb$in$len
 	dad	d	; HL = CFGTBL
 	shld	cfgadr
+	lxi	d,G$CMD
+	dad	d
+	shld	cfgcmd
 	; set CFGTBL into system data page
 	mvi	c,sysdatf
 	call	bdos
@@ -138,9 +142,14 @@ setup:
 	ora	a	; (each should be sleeping on input Q)
 	jnz	failed
 	; now wait for start signal...
+wait:
 	lxi	d,nmutex
 	mvi	c,readqf
 	call	bdos	; sleeps until SRVSTART
+	lhld	cfgcmd
+	mov	a,m
+	cpi	NWSTART
+	jrnz	wait
 	; ...sysadmin has released us
 	call	NTWKIN
 	ora	a
@@ -148,7 +157,11 @@ setup:
  if not use$mxdisk
 	call	nunlock	; allow access to NIOS now
  endif
-	jmp	recvr	; now perform our designated function...
+	call	recvr	; now perform our designated function...
+	; returns here on shutdown, all cleanup finished.
+	lhld	cfgcmd
+	mvi	m,NWSTOP	; redundant?
+	jr	wait
 
 failed:
 	mvi	c,attconf

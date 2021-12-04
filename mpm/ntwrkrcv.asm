@@ -8,7 +8,7 @@
 
 	; This must be linked with a suitable NIOS.REL
 	public	qinit,recvr,rqfree,bffree,logoff
-	extrn	bdos,nlock,nunlock,srvlgo
+	extrn	bdos,nlock,nunlock,srvlgo,cfgcmd
 	extrn	NTWKIN,NTWKST,SNDMSG,RCVMSG,NWPOLL,NTWKER,NTWKDN,NWLOGO
 
 ;***************************************************************************
@@ -231,16 +231,46 @@ bff1:	mov	c,a
 	mvi	m,0	; free buffer
 	ret
 
-recvr:	; main receive polling loop
+; return from here is a return from 'recvr'
+shutdown:
+	call	nlock	; might sleep
+	call	NTWKDN
+	call	nunlock
+	; free all requesters
+	lxi	h,rqstr$table		;point to the start of the RCB table
+	mvi	b,nmb$rqstrs
+	lxi	d,rqtb$len		;size of RCB's for scanning the table
+sd0:	mvi	m,0ffh	; no requester attached
+	dad	d
+	djnz	sd0
+	; free all buffers
+	lxi	h,buf$cb
+	mvi	b,nmb$bufs
+sd1:	mvi	m,0	; buffer is free
+	inx	h
+	djnz	sd1
+	; any more cleanup?
+	ret
+
+recvr:	; main receive polling loop - called, returns on shutdown
  if polling
+	; polling needs to include shutdown check
 	mvi	e,8	; TODO: do not hard-code?
 	mvi	c,poll
 	call	bdos
+	lhld	cfgcmd
+	mov	a,m
+	cpi	NWSTOP	; or cfgcmd <> NWSTART?
+	jrz	shutdown
 	call	nlock	; might sleep
  else
 	lxi	d,1	; TODO: best number here?
 	mvi	c,delayf
 	call	bdos	;dispatch and go sleepy bye for a bit
+	lhld	cfgcmd
+	mov	a,m
+	cpi	NWSTOP	; or cfgcmd <> NWSTART?
+	jrz	shutdown
 	; NWPOLL must be atomic with RCVMSG, if "ready"
 	call	nlock	; might sleep
 	call	NWPOLL

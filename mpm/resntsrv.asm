@@ -122,5 +122,6 @@ CFGTBL:
 	dw	0000h		; 16 bit vector of logged in requesters
 	ds	16		; Logged In Requester Node ID's
 	db	'PASSWORD' 	; login password
+	db	0		; cmd: boot w/network "shutdown"
 
 	end

@@ -12,7 +12,7 @@ VCPM = vcpm
 PREREQ = tmp/z80.lib tmp/cfgnwif.lib
 
 all: $(PREREQ) \
-	netservr.rsp netservr.brs
+	netservr.rsp netservr.brs srvstart.com srvstop.com
 #	netwrkif.brs netwrkif.rsp \
 #	server.brs server.rsp
 

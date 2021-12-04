@@ -615,9 +615,11 @@ NWLOGO:	; close/disconnect requester (A=NID)
 
 ; Called from NetServr process, no other cleanup required
 NTWKDN:	; close all sockets
+	lxi	h,srvtbl
 	mvi	b,nsocks
 	mvi	d,sock0
-nd0:	mvi	e,sn$sr
+nd0:	mvi	m,0ffh
+	mvi	e,sn$sr
 	call	getwiz1
 	cpi	CLOSED
 	jz	nd1
@@ -629,6 +631,7 @@ nd0:	mvi	e,sn$sr
 nd1:	mvi	a,001$00$000b
 	add	d	; next socket
 	mov	d,a
+	inx	h
 	djnz	nd0
 	xra	a
 	ret

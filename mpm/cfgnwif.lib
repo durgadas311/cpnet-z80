@@ -13,6 +13,7 @@ eof	equ	26
 ; BDOS function numbers
 listf	equ	5
 printf	equ	9
+versf	equ	12
 drivef	equ	14
 openf	equ	15
 closef	equ	16
@@ -82,7 +83,11 @@ G$VEC	equ	4	; 16-bit vector of login slots
 G$LOG	equ	6	; Array[16] of logged-in NIDs, per G$VEC
 G$PWD	equ	22	; login password (8 bytes)
 G$LEN	equ	22	; length exported, password never revealed.
-G$ALL	equ	30	; total length
+G$CMD	equ	30	; "command" (startup,shutdown,...)
+G$ALL	equ	31	; total length
+; G$CMD values:
+NWSTOP	equ	0
+NWSTART	equ	1
 
 ; NOTE: CP/NET "compatability attributes" are kept in
 ; the server process descriptor "PD extent high byte",
