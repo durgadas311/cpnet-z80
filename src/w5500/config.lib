@@ -1,1 +1,18 @@
 ; future options for W5500
+
+; MP/M Server settings:
+
+; The W5500 has 8 sockets, all are setup to listen.
+; Limiting to 7 requesters allows one socket to remain
+; active for servicing requests and possible admin purposes.
+nmb$rqstrs	equ	7	; Number of requesters supported at one time
+
+; TODO: to support polling, the NIOS poll routine
+; must be in common memory. That may not be possible/practical.
+; In addition, the host XIOS must support polling and provide
+; some method to access the poll table.
+polling		equ	0
+
+; If network and disk share hardware (SPI adapter),
+; must use same mutex for both to avoid conflicts.
+use$mxdisk	equ	1

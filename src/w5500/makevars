@@ -1,3 +1,5 @@
 TARGETS += wizcfg.com wizdbg.com wiztest.com
 WZCDEPS = wizcfg.rel libwiznt.rel
 WZCLINK = wizcfg,libwiznt
+MPMTARG += netservr.rsp netservr.brs wizcfg.com srvstart.com srvstop.com
+LIBS += cfgnwif.lib

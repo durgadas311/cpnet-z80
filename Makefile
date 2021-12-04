@@ -46,6 +46,7 @@ BLD_SRC = $(BLD_TOP)/src
 BLD_LIB = $(BLD_TOP)/lib
 BLD_BIN2 = $(BLD_TOP)/bin/cpnet12
 BLD_BIN3 = $(BLD_TOP)/bin/cpnet3
+BLD_MPM = $(BLD_TOP)/bin/mpmnet
 
 # For the 'vcpm' (VirtualCpm.jar) emulation
 export CPMDrive_D = $(BLD_SRC)
@@ -53,6 +54,7 @@ export CPMDrive_L = $(BLD_LIB)
 export CPMDefault = d:
 
 TARGETS = netstat.com srvstat.com rdate.com tr.com
+MPMTARG =
 ND3DEP = ndos3dup.com
 LIBS = z80.lib config.lib
 DIRS = $(BLD_SRC) $(BLD_LIB) $(BLD_BIN2) $(BLD_BIN3)
@@ -68,19 +70,27 @@ CPN3 = $(CPNET)
 XCPN3 = ntpdate.com rsxrm.com rsxls.com netdown.com
 XCPN2 = netdown.com
 
+ALLTARG = cpnet2 cpnet3
+
 -include src/$(NIC)/makevars
 -include src/$(HBA)/makevars
 
+ifneq ($(MPMTARG),)
+DIRS += $(BLD_MPM)
+ALLTARG += mpmnet
+endif
+
 .SECONDARY:
 
-all: $(DIRS) $(addprefix $(BLD_LIB)/,$(LIBS)) \
-	cpnet2 cpnet3
+all: $(DIRS) $(addprefix $(BLD_LIB)/,$(LIBS)) $(ALLTARG)
 
 cpnet2: $(addprefix $(BLD_BIN2)/,$(TARGETS) $(CPN2) snios.spr $(XCPN2))
 
 cpnet3: $(addprefix $(BLD_BIN3)/,$(TARGETS) $(CPN3) ndos3.com $(XCPN3))
 
-$(BLD_SRC) $(BLD_LIB) $(BLD_BIN2) $(BLD_BIN3):
+mpmnet: $(addprefix $(BLD_MPM)/,$(MPMTARG))
+
+$(BLD_SRC) $(BLD_LIB) $(BLD_BIN2) $(BLD_BIN3) $(BLD_MPM):
 	@mkdir -p $@
 
 $(BLD_LIB)/config.lib: src/config.lib src/$(NIC)/config.lib src/$(HBA)/config.lib
@@ -93,6 +103,9 @@ $(BLD_BIN3)/%: $(BLD_SRC)/%
 	cp -v --update $^ $@
 
 $(BLD_BIN2)/%: $(BLD_SRC)/%
+	cp -v --update $^ $@
+
+$(BLD_MPM)/%: $(BLD_SRC)/%
 	cp -v --update $^ $@
 
 $(BLD_BIN3)/%: dist/%
@@ -135,6 +148,12 @@ $(BLD_BIN2)/cpnetldr.com: $(CPNLDR)
 
 %/cpnldr-w.com: %/cpnldr-w.rel %/libwiznt.rel %/libnvram.rel %/libcpnet.rel
 	$(VCPM) link cpnldr-w,libwiznt,libnvram,libcpnet'[oc,nr]'
+
+%/netservr.rsp: %/resntsrv.rel
+	$(VCPM) link netservr.rsp=resntsrv"[os,nr]"
+
+%/netservr.brs: %/bnkntsrv.rel %/ntwrkrcv.rel %/servers.rel %/nios.rel
+	$(VCPM) link netservr.brs=bnkntsrv,ntwrkrcv,servers,nios"[os,nr]"
 
 %.com: %.asm
 	$(VCPM) mac "$(notdir $?)" '$$SZLL'
