@@ -2,6 +2,12 @@
 ; Contains code optimizations (macros) that cause a slight
 ; variation in one code sequence, compared to original SERVER.RSP.
 ;
+; Allow for mini R/O vector in low 4 bits of compatability attributes
+; (process descriptor + 29). This requires XIOS support, to check and
+; enforce (WRITE returns "2").
+; This also requires that the temporary drive not be a protected drive,
+; or else spooling may not work.
+; By default, drive A: is protected (RESNTSRV.ASM).
 	maclib	config
 	maclib	cfgnwif
 
@@ -453,7 +459,12 @@ cpnet:	lxi	h,-@init
 	inx	h
 	mov	m,d	; ?procd=our-proc-desc
 	inx	h
-	xchg		; DE=?msgqi
+	xchg		; DE=?msgqi, HL=pdadr
+	push	d	; off=2
+	lxi	d,P$ATTR
+	dad	d
+	mvi	m,def$prot
+	pop	d	; off=0
 	lxi	h,@uqcbi+Q$MSG+0
 	dad	sp	; HL=?uqcbi.MSGADR
 	mov	m,e
@@ -659,7 +670,7 @@ sp3:	lda	spoolf
 	pop	h	; off=0 (HL=DAT[1])
 	dcx	h
 	dcx	h	; SIZ
-	push	h	; off=2
+	push	h	; off=2 (save MSGBUF.SIZ)
 	mov	a,m
 	mvi	m,1-1	; return msg 1 byte
 	inr	a
@@ -733,7 +744,7 @@ sp5:	pop	psw	; off=2 (0FFH seen)
 	lxi	h,@spfcb+0
 	dad	sp
 	xchg
-	inx	d	; pont to filename
+	inx	d	; point to filename
 	mvi	b,8
 	call	moveb	; copy base name
 	lxi	d,texcmd
@@ -1259,7 +1270,7 @@ cmpatr:	mvi	c,sysdatf
 	call	bdos
 	lxi	d,96	; reserved for MP/M-II
 	dad	d
-	mov	a,m
+	mov	a,m	; some flag... TBD
 	ora	a	; ZR tested later...
 	pop	h	; off=0, HL=MSGBUF
 	lxi	d,DAT
@@ -1273,6 +1284,11 @@ cmpatr:	mvi	c,sysdatf
 	lxi	h,P$ATTR
 	dad	d
 	jz	cmpa0
+	ani	11110000b
+	mov	e,a
+	mov	a,m
+	ani	00001111b
+	ora	e
 	mov	m,a	; set compat attrs
 cmpa0:	ora	a
 	jnz	sndbak
@@ -1483,6 +1499,8 @@ ps2:	; DE=stack-end, HL=proc-desc
 	pop	d	; DE=proc-desc
 	push	d	;
 	push	b	;
+	; process create will zero compat attr,
+	; must setup write-protect later.
 	mvi	c,makepf
 	call	bdos	; create new process
 	pop	b

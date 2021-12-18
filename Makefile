@@ -30,6 +30,7 @@ NIC = w5500
 CRLFP = unix2dos
 CRLF2 = unix2dos -n
 VCPM = vcpm
+ZMAC = zmac
 
 # Output/build directory.
 # Override on commandline using BUILD=/some/path.
@@ -154,6 +155,11 @@ $(BLD_BIN2)/cpnetldr.com: $(CPNLDR)
 
 %/netservr.brs: %/bnkntsrv.rel %/ntwrkrcv.rel %/servers.rel %/nios.rel
 	$(VCPM) link netservr.brs=bnkntsrv,ntwrkrcv,servers,nios"[os,nr]"
+
+%/system.dat: %/gm.cpnet.asm
+	cd $(CPMDrive_D) && \
+	$(ZMAC) -o gm.cpnet.cim gm.cpnet.asm && \
+	mv gm.cpnet.cim system.dat
 
 %.com: %.asm
 	$(VCPM) mac "$(notdir $?)" '$$SZLL'

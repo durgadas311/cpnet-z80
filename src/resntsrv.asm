@@ -53,7 +53,7 @@ networkio:			; Receiver Process
 	ds	2		; dcnt
 	ds	1		; searchl
 	ds	2		; searcha
-	ds	2		; active drives
+	ds	2		; PD extent, compat attr
 	dw	0		; HL'
 	dw	0		; DE'
 	dw	0		; BC'
@@ -94,7 +94,7 @@ SERVR0PR:	; et al.
 	ds	2		; dcnt
 	ds	1		; searchl
 	ds	2		; searcha
-	ds	2		; active drives
+	ds	2		; PD extent, compat attr
 	dw	0		; HL'
 	dw	0		; DE'
 	dw	0		; BC'

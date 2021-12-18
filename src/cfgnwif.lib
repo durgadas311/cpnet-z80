@@ -4,6 +4,7 @@
 nmb$bufs	equ	nmb$rqstrs+1	; Number of message buffers
 srvr$stk$len	equ	150	; server process stack size
 qcb$out$buf	equ	2*nmb$bufs	; length of qcb$out buffer
+def$prot	equ	0001b	; default write-protect drives vector
 ;
 ; ASCII control characters
 cr	equ	13
@@ -96,7 +97,7 @@ P$CONLST equ	14	; CON:/LST: device
 P$DSEL	equ	22	; DISK SLCT
 P$DCNT	equ	23	; offset of DCNT,SEARCHL,SEARCHA in PD
 P$EXT	equ	28	; offset of "PD EXTENT" in PD
-P$ATTR	equ	P$EXT+1	; CP/NET compat attrs in PD
+P$ATTR	equ	P$EXT+1	; CP/NET compat attrs in PD (bits 4-7)
 P$BC	equ	46	; BC register in PD
 P$LEN	equ	52	; PD length
 
