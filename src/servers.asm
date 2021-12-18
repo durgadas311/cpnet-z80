@@ -1268,10 +1268,10 @@ lgo1:	mov	a,b
 
 cmpatr:	mvi	c,sysdatf
 	call	bdos
-	lxi	d,96	; reserved for MP/M-II
+	lxi	d,96	; enable compat attrs
 	dad	d
-	mov	a,m	; some flag... TBD
-	ora	a	; ZR tested later...
+	mov	a,m	; attrs enabled?
+	ora	a	; ZR (disabled) tested later...
 	pop	h	; off=0, HL=MSGBUF
 	lxi	d,DAT
 	dad	d
