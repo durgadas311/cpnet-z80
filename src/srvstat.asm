@@ -37,6 +37,9 @@ start:
 	lxi	sp,stack
 	call	getver
 	mov	a,h
+	ani	01h
+	jnz	dompm
+	mov	a,h
 	ani	02h
 	jz	nocpnt
 	call	parse	; might set 'sid'
@@ -54,6 +57,7 @@ start:
 	jz	nocfg
 
 	shld	nettbl
+show:
 	lixd	nettbl
 
 	lxi	d,sidmsg
@@ -108,19 +112,41 @@ noreq:	inxix
 	djnz	drvlup
 	jmp	exit
 
+; MP/M system - check for server config table
+dompm:
+	lxi	d,signon	; Intro - TODO: diff for MP/M?
+	call	msgout
+	mvi	c,154
+	call	bdos
+	mvi	l,9	; CP/NET server cfg
+	mov	e,m
+	inx	h
+	mov	d,m	;
+	mvi	l,196	; temp drive
+	mov	a,m	; (0=def, 1=A:, ...)
+	dcr	a	; unclear what 'def' should do
+	sta	mpmtbl+TEMP
+	mov	a,e
+	ora	d
+	jz	nocfg
+	xchg
+	lxi	d,mpmtbl+STS
+	lxi	b,22	; TODO: include password?
+	ldir
+	lxi	h,mpmtbl
+	shld	nettbl
+	jmp	show
+
 none:	lxi	d,nonmsg
 	call	msgout
 	jmp	exit
 
-nocfg:
-	lxi	d,cfgerr
+nocfg:	lxi	d,cfgerr
 	jmp	no1
 
-nocpnt:
-	lxi	d,cpnerr	; CP/NET has not been loaded
+nocpnt:	lxi	d,cpnerr	; CP/NET has not been loaded
 no1:	call	msgout
-exit:
-	lhld	usrstk
+exit:	lhld	usrstk
 	sphl
 	ret
 
@@ -281,5 +307,8 @@ usrstk:	dw	0
 sid:	db	0
 count:	db	0
 nettbl:	dw	0
+
+mpmtbl:	ds	23	; copied from MP/M system data
+	; TODO: also show password?
 
 	end

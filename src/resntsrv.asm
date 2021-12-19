@@ -116,7 +116,7 @@ qcb$in$0:	; et al.
 ; Server Configuration Table
 CFGTBL:
 	db	0		; Server status byte
-	db	0		; Server processor ID
+	db	0ffh		; Server processor ID
 	db	nmb$rqstrs	; Max number of requesters supported at once
 	db	0		; Number of currently logged in requesters
 	dw	0000h		; 16 bit vector of logged in requesters

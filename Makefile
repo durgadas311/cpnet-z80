@@ -66,7 +66,7 @@ SNLINK = snios
 # Files in dist subdir:
 CPNET = cpnetsts.com dskreset.com endlist.com local.com \
 	login.com logoff.com mail.com network.com xsubnet.com
-CPN2 = ndos.spr ccp.spr cpnetldr.com $(CPNET)
+CPN2 = ndos.spr ccp.spr cpnetldr.com pipnet.com $(CPNET)
 CPN3 = $(CPNET)
 XCPN3 = ntpdate.com rsxrm.com rsxls.com netdown.com
 XCPN2 = netdown.com
@@ -89,7 +89,7 @@ cpnet2: $(addprefix $(BLD_BIN2)/,$(TARGETS) $(CPN2) snios.spr $(XCPN2))
 
 cpnet3: $(addprefix $(BLD_BIN3)/,$(TARGETS) $(CPN3) ndos3.com $(XCPN3))
 
-mpmnet: $(addprefix $(BLD_MPM)/,$(MPMTARG))
+mpmnet: $(addprefix $(BLD_MPM)/,$(MPMTARG) srvstat.com)
 
 $(BLD_SRC) $(BLD_LIB) $(BLD_BIN2) $(BLD_BIN3) $(BLD_MPM):
 	@mkdir -p $@
