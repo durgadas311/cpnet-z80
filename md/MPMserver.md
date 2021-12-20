@@ -7,6 +7,19 @@ The banked portion is constructed from several source modules:
 bnkntsrv.asm, ntwrkrcv.asm, servers.asm, and an nios.asm for
 the target NIC/HBA.
 
+The server instantiates N+1 processes, where "N" is the number
+of requesters allowed to log in at the same time.
+One process is for the network receive operation, and (generally) only accesses
+network receive functions.
+The other processes act as servers for logged-in requesters,
+and only access network send functions. In addition, N message queues
+are created and a single mutex queue (to prevent collisions on network hardware
+and to control startup/shutdown).
+
+When a requester logs in, it is assigned a server process.
+That requester uses the same server process until it logs off
+(or is otherwise disconnected).
+
 ## CP/M 3 - CP/NET3
 This server does not currently support CP/M 3 clients.
 
@@ -37,12 +50,12 @@ Typical XIOS code to check for write-protect is:
 
  1. get process descriptor address from XDOS internal data segment "osrlr"
 (Run List Root) field, which always points to the current running process.
- 1. offset to byte +29 (+1dh), the compatability attributes,
+ 1. offset to byte +29 (+1dh), the compatibility attributes,
 and check the low 4 bits. Bit 0 represents drive A:
  1. if drive A: is being written, and bit 0 is "1", then return error code "2"
 (R/O disk).
 
-Only the high 4 bits of the compatability attributes byte are currently used.
+Only the high 4 bits of the compatibility attributes byte are currently used.
 The low 4 bits may be used to represent a "R/O vector" for drives A:-D:,
 if the XIOS honors that and checks the bits against the drive being written.
 The server code only sets bit 0, but the value is taken from the configuration
@@ -88,5 +101,5 @@ directly - but it cannot change while being examined.
 The NWLOGO routine is used to shutdown one specific connection (client).
 This is called, with the client node ID in A, when the client is logged off
 for any reason.
-This is in constrast to NTWKDN which effectively disconnects ALL clients
+This is in contrast to NTWKDN which effectively disconnects ALL clients
 and the network itself (e.g. stops listening for socket connections).
