@@ -16,6 +16,9 @@ NIC | HBA | Description
 [ser-dri](SER-DRI.md) | [kaypro](KAYPRO.md) | DRI serial protocol on Kaypro Z80-SIO UART
 [vcpnet](VCPNET.md) | null | Virtual CP/NET pseudo device
 
+An [MP/M Server](MPMserver.md) implementation is also available.
+Currently, only the W5500 NIC builds the MP/M components.
+
 For the Heathkit H8/H89, the board is the H8xSPI with the
 [WIZ850io](https://www.wiznet.io/product-item/wiz850io/) W5500 module
 and includes an NVRAM chip as well,
