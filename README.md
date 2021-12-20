@@ -1,22 +1,22 @@
 # cpnet-z80
-[CPNET-Z80](CPNET-Z80.md) is a port/implementation of DRI CP/NET with drivers for the following
+[CPNET-Z80](md/CPNET-Z80.md) is a port/implementation of DRI CP/NET with drivers for the following
 environments:
 
 NIC | HBA | Description
 ----|-----|------------
-[w5500](W5500.md) | [h8xspi](H8XSPI.md) | Heathkit H8/H89 with WIZ850io and NVRAM
-[w5500](W5500.md) | [mt011](MT011.md) | RC2014 with MT011 and Featherwing W5500
-[w5500c](W5500.md) | [z180csio](Z180CSIO.md) | SC126 Z180 with W5500 breakout board
-[serial](SERIAL.md) | [ft245r](FT245R.md) | Serial over FT245R USB module, simple protocol
-[serial](SERIAL.md) | [USB1232](USB1232H.md) | Serial over USB1232H module, simple protocol
-[serial](SERIAL.md) | [rc-siob](RC-SIOB.md) | Serial support via FTDI cable for SC131
-[ser-dri](SER-DRI.md) | [minz](MINZ.md) | Serial over MinZ-U ASCI1 port, DRI protocol
-[ser-dri](SER-DRI.md) | [ft245r](FT245R.md) | Serial over FT245R USB module, DRI protocol
-[ser-dri](SER-DRI.md) | [ins8250](INS8250.md) | DRI serial protocol over INS8250-like UART
-[ser-dri](SER-DRI.md) | [kaypro](KAYPRO.md) | DRI serial protocol on Kaypro Z80-SIO UART
-[vcpnet](VCPNET.md) | null | Virtual CP/NET pseudo device
+[w5500](md/W5500.md) | [h8xspi](md/H8XSPI.md) | Heathkit H8/H89 with WIZ850io and NVRAM
+[w5500](md/W5500.md) | [mt011](md/MT011.md) | RC2014 with MT011 and Featherwing W5500
+[w5500c](md/W5500.md) | [z180csio](md/Z180CSIO.md) | SC126 Z180 with W5500 breakout board
+[serial](md/SERIAL.md) | [ft245r](md/FT245R.md) | Serial over FT245R USB module, simple protocol
+[serial](md/SERIAL.md) | [USB1232](md/USB1232H.md) | Serial over USB1232H module, simple protocol
+[serial](md/SERIAL.md) | [rc-siob](md/RC-SIOB.md) | Serial support via FTDI cable for SC131
+[ser-dri](md/SER-DRI.md) | [minz](md/MINZ.md) | Serial over MinZ-U ASCI1 port, DRI protocol
+[ser-dri](md/SER-DRI.md) | [ft245r](md/FT245R.md) | Serial over FT245R USB module, DRI protocol
+[ser-dri](md/SER-DRI.md) | [ins8250](md/INS8250.md) | DRI serial protocol over INS8250-like UART
+[ser-dri](md/SER-DRI.md) | [kaypro](md/KAYPRO.md) | DRI serial protocol on Kaypro Z80-SIO UART
+[vcpnet](md/VCPNET.md) | null | Virtual CP/NET pseudo device
 
-An [MP/M Server](MPMserver.md) implementation is also available.
+An [MP/M Server](md/MPMserver.md) implementation is also available.
 Currently, only the W5500 NIC builds the MP/M components.
 
 For the Heathkit H8/H89, the board is the H8xSPI with the
@@ -50,15 +50,15 @@ Prebuilt packages for the Kaypro (Serial Data port) are available
 
 Prebuilt packages for other architectures are TBD.
 
-## [Running CP/NET3](CPNET3.md)
+## [Running CP/NET3](md/CPNET3.md)
 
-## [Running CP/NET 1.2](CPNET12.md)
+## [Running CP/NET 1.2](md/CPNET12.md)
 
-## How to [build](BUILD.md) your own.
+## How to [build](md/BUILD.md) your own.
 
-## How to [develop](DEVEL.md) a new platform.
+## How to [develop](md/DEVEL.md) a new platform.
 
-### [Running CP/NET](RUN-RC2014.md) on RC2014.
+### [Running CP/NET](md/RUN-RC2014.md) on RC2014.
 
 ## CP/NET on SC131 and friends (serial port) *
 
