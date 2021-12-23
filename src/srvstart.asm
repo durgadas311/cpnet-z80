@@ -23,7 +23,7 @@ did:	db	'CP/NET Server already started',CR,LF,'$'
 mx$UQCB:
 	dw	0	; QCB filled by openqf
 	dw	0	; no message, no buffer
-	db	'MXNetwrk'
+	db	'MXServer'
 
 cmdadr:	dw	0
 
