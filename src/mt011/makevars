@@ -1,4 +1,5 @@
 TARGETS += nvram.com
+MPMTARG += nvram.com
 XCPN2 += cpnboot.com
 ND3DEP = ndos3wiz.com
 WZCDEPS += libnvram.rel

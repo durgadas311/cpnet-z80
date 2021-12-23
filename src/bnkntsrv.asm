@@ -111,6 +111,14 @@ setup:
 	call	bdos
 	; we own the mutex now, don't release until we've called NTWKIN
 	pop	h
+	lxi	d,26
+	dad	d	; HL = mx$servr
+	shld	smutex
+	push	h
+	xchg	; DE=mx$servr
+	mvi	c,makeqf
+	call	bdos
+	pop	h
 	lxi	d,26	; length of mutex
 	dad	d	; HL = SERVR0PR
 	push	h	; save SERVR0PR for proc create loop
@@ -129,6 +137,11 @@ setup:
 	lxi	d,G$CMD
 	dad	d
 	shld	cfgcmd
+	inx	h	; exnmtx = (ntmtx)
+	lded	ntmtx	; actual QCB
+	mov	m,e
+	inx	h
+	mov	m,d	; this makes G$MTX a real UQCB
 	; set CFGTBL into system data page
 	mvi	c,sysdatf
 	call	bdos
@@ -142,21 +155,26 @@ setup:
 	ora	a	; (each should be sleeping on input Q)
 	jnz	failed
 	; now wait for start signal...
+	; nmutex must not be "held"
+ if not use$mxdisk
+	call	nunlock	; was created "locked"
+ endif
 wait:
-	lxi	d,nmutex
+	lxi	d,smutex
 	mvi	c,readqf
 	call	bdos	; sleeps until SRVSTART
 	lhld	cfgcmd
 	mov	a,m
 	cpi	NWSTART
 	jrnz	wait
-	; ...sysadmin has released us
+	; ...sysadmin has released us.
+	call	nlock
 	call	NTWKIN
+	push	psw
+	call	nunlock	; allow access to NIOS now
+	pop	psw
 	ora	a
 	jnz	failed
- if not use$mxdisk
-	call	nunlock	; allow access to NIOS now
- endif
 	call	recvr	; now perform our designated function...
 	; returns here on shutdown, all cleanup finished.
 	lhld	cfgcmd

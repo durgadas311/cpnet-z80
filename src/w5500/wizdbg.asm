@@ -19,6 +19,11 @@ cmdlin	equ	0080h
 
 print	equ	9
 getver	equ	12
+; MP/M XDOS functions
+openqf	equ	135
+readqf	equ	137
+writqf	equ	139
+sysdatf	equ	154
 
 	org	00100h
 
@@ -32,16 +37,71 @@ usage:	db	'Usage: WIZDBG {G bsb off num}',CR,LF
 	db	'       dat = Byte(s) to SET, hex',CR,LF,'$'
 nocpn:	db	'CP/NET is running. Stop it first or use F',CR,LF,'$'
 cpnet:	db	0
+mpm:	db	0
 force:	db	0
+
+nmutex:	dw	0	; either 'MXDisk' opened, or mx-of-choice from NetServr.
+	dw	0	; no messages
+	db	'MXDisk  '
+
+; lock/unlock preserve DE,IX for WizNET cmd data
+nlock:	push	d
+	pushix
+	lxi	d,nmutex
+	mvi	c,readqf
+	call	bdos
+	popix
+	pop	d
+	ret
+
+nunlock:
+	push	d
+	pushix
+	lxi	d,nmutex
+	mvi	c,writqf
+	call	bdos
+	popix
+	pop	d
+	ret
+
+dompm:
+	mvi	c,sysdatf
+	call	bdos
+	mvi	l,9	; S$CPNET
+	mov	e,m
+	inx	h
+	mov	d,m
+	mov	a,e
+	ora	d
+	jz	nosrv
+	lxi	d,31	; G$MTX
+	dad	d
+	mov	e,m
+	inx	h
+	mov	d,m
+	xchg
+	shld	nmutex	; as if opened...
+	jr	mpm1
+nosrv:	lxi	d,nmutex	; use as MXDisk UQCB
+	mvi	c,openqf
+	call	bdos
+	ora	a
+	jrnz	nocpn0	; what to do? blunder ahead...
+mpm1:	ori	0ffh
+	sta	mpm	; 'true' if nlock/nunlock required
+	jr	nocpn0
 
 start:
 	sspd	usrstk
 	lxi	sp,stack
 	mvi	c,getver
 	call	bdos
+	bit	4,h
+	jnz	dompm
 	mov	a,h
 	ani	02h
 	sta	cpnet
+nocpn0:
 	lhld	bdos+1	; compute max buf space
 	mvi	l,0	;
 	dcr	h	; safety margin
@@ -130,9 +190,19 @@ set0:
 	call	skipb
 	jnc	set0
 set1:
+	push	h
+	push	b
+	lda	mpm
+	ora	a
+	cnz	nlock	; preserves DE, IX
+	pop	b
+	pop	h
 	mov	a,c
 	sta	num
 	call	wizset
+	lda	mpm
+	ora	a
+	cnz	nunlock
 	jmp	exit
 
 get:
@@ -143,8 +213,18 @@ get:
 	ora	a
 	dsbc	d
 	jc	help	; or "overflow"? "too large"?
+	push	h
+	push	b
+	lda	mpm
+	ora	a
+	cnz	nlock	; preserves DE, IX
+	pop	b
+	pop	h
 	sded	num
 	call	wizget
+	lda	mpm
+	ora	a
+	cnz	nunlock
 	lxi	h,buf
 	push	h
 ; dump 'num' bytes from 'buf'... label with bsb/off...

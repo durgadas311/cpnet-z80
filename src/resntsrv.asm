@@ -68,10 +68,21 @@ networkio:			; Receiver Process
 
 ; Mutex used to control access to the network hardware
 ; (NIOS interfaces). Process must own this mutex before
-; calling the NIOS.
+; calling the NIOS. Some systems use MXDisk instead.
 mx$netwrk:
 	dw	0	; LINK
 	db	'MXNetwrk'
+	dw	0	; MSGLEN (mutex)
+	dw	1	; NMBMSGS
+	dw	0,0,0,0,0
+	dw	0	; BUFFER (owning proc)
+
+; Mutex used to control start/stop of the server.
+; NetServr process waits on this before initializing network,
+; and checks it for "messages" via G$CMD.
+mx$servr:
+	dw	0	; LINK
+	db	'MXServer'
 	dw	0	; MSGLEN (mutex)
 	dw	1	; NMBMSGS
 	dw	0,0,0,0,0
@@ -121,7 +132,9 @@ CFGTBL:
 	db	0		; Number of currently logged in requesters
 	dw	0000h		; 16 bit vector of logged in requesters
 	ds	16		; Logged In Requester Node ID's
-	db	'PASSWORD' 	; login password
-	db	0		; cmd: boot w/network "shutdown"
+	; Not officially part of config table:
+	db	'PASSWORD' 	; login password (DRI convention)
+	db	0		; cmd: start/stop server
+	dw	0		; exported mutex for network (may be MXDisk).
 
 	end

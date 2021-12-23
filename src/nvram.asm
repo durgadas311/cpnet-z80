@@ -30,6 +30,11 @@ cmdlin	equ	0080h
 conin	equ	1
 print	equ	9
 getver	equ	12
+; MP/M XDOS functions
+openqf	equ	135
+readqf	equ	137
+writqf	equ	139
+sysdatf	equ	154
 
 	org	00100h
 
@@ -58,13 +63,70 @@ else
 	db	'$'
 endif
 
+mpm:	db	0
+
+nmutex:	dw	0	; either 'MXDisk' opened, or mx-of-choice from NetServr.
+	dw	0	; no messages
+	db	'MXDisk  '
+
+; lock/unlock preserve DE,IX for WizNET cmd data
+nlock:	push	d
+	pushix
+	lxi	d,nmutex
+	mvi	c,readqf
+	call	bdos
+	popix
+	pop	d
+	ret
+
+nunlock:
+	push	d
+	pushix
+	lxi	d,nmutex
+	mvi	c,writqf
+	call	bdos
+	popix
+	pop	d
+	ret
+
+dompm:
+	mvi	c,sysdatf
+	call	bdos
+	mvi	l,9	; S$CPNET
+	mov	e,m
+	inx	h
+	mov	d,m
+	mov	a,e
+	ora	d
+	jz	nosrv
+	lxi	d,31	; G$MTX
+	dad	d
+	mov	e,m
+	inx	h
+	mov	d,m
+	xchg
+	shld	nmutex	; as if opened...
+	jr	mpm1
+nosrv:	lxi	d,nmutex	; use as MXDisk UQCB
+	mvi	c,openqf
+	call	bdos
+	ora	a
+	jrnz	nocpnt	; what to do? blunder ahead...
+mpm1:	ori	0ffh
+	sta	mpm	; 'true' if nlock/nunlock required
+	jr	nocpnt
+
 start:
 	sspd	usrstk
 	lxi	sp,stack
 	lda	cmdlin
 	ora	a
 	jz	help
-
+	mvi	c,getver
+	call	bdos
+	bit	4,h
+	jnz	dompm
+nocpnt:
 	lxi	h,cmdlin
 	mov	b,m
 	inx	h
@@ -319,6 +381,9 @@ nvcmd0:	xra	a
 	ret
 
 nvget:
+	lda	mpm
+	ora	a
+	cnz	nlock
 	lda	scs
 	out	spi$ctl
 	mvi	a,READ
@@ -343,11 +408,17 @@ nvget0:	inir	; B = 0 after
 	jnz	nvget0
 	xra	a	; not SCS
 	out	spi$ctl
+	lda	mpm
+	ora	a
+	cnz	nunlock
 	ret
 
 nvset:
 	; TODO: wait for WIP=0...
 	; Also, could span two pages...
+	lda	mpm
+	ora	a
+	cnz	nlock
 	lda	scs
 	out	spi$ctl
 	mvi	a,WREN
@@ -370,6 +441,9 @@ nvset:
 	outir
 	xra	a	; not SCS
 	out	spi$ctl
+	lda	mpm
+	ora	a
+	cnz	nunlock
 	ret
 
 chrout:

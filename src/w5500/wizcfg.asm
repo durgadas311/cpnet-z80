@@ -33,6 +33,11 @@ cmd	equ	0080h
 print	equ	9
 getver	equ	12
 cfgtbl	equ	69
+; MP/M XDOS functions
+openqf	equ	135
+readqf	equ	137
+writqf	equ	139
+sysdatf	equ	154
 
 	cseg
 
@@ -90,14 +95,67 @@ nlst:	db	'Network LST: = '
 nl1:	db	'_['
 nl2:	db	'__]',CR,LF,'$'
 
+nmutex:	dw	0	; either 'MXDisk' opened, or mx-of-choice from NetServr.
+	dw	0	; no messages
+	db	'MXDisk  '
+
 	cseg
+
+; lock/unlock preserve DE,IX for WizNET cmd data
+nlock:	push	d
+	pushix
+	lxi	d,nmutex
+	mvi	c,readqf
+	call	bdos
+	popix
+	pop	d
+	ret
+
+nunlock:
+	push	d
+	pushix
+	lxi	d,nmutex
+	mvi	c,writqf
+	call	bdos
+	popix
+	pop	d
+	ret
+
+dompm:
+	mvi	c,sysdatf
+	call	bdos
+	mvi	l,9	; S$CPNET
+	mov	e,m
+	inx	h
+	mov	d,m
+	mov	a,e
+	ora	d
+	jz	nosrv
+	lxi	d,31	; G$MTX
+	dad	d
+	mov	e,m
+	inx	h
+	mov	d,m
+	xchg
+	shld	nmutex	; as if opened...
+	jr	mpm1
+nosrv:	lxi	d,nmutex	; use as MXDisk UQCB
+	mvi	c,openqf
+	call	bdos
+	ora	a
+	jrnz	nocpnt	; what to do? blunder ahead...
+mpm1:	ori	0ffh
+	sta	mpm	; 'true' if nlock/nunlock required
+	jr	nocpnt
+
 start:
 	sspd	usrstk
 	lxi	sp,stack
 	mvi	c,getver
 	call	bdos
-	mov	a,h
-	ani	02h
+	bit	4,h
+	jnz	dompm
+	bit	5,h
 	jz	nocpnt
 	ori	0ffh
 	sta	cpnet
@@ -134,7 +192,7 @@ notw:
 	push	b
 	lda	direct
 	ora	a
-	cz	nvgetb	; init buf if needed
+	cz	nvgetb	; init buf if needed (handles locking)
 	pop	b
 	pop	h
 	mov	a,m	; restore cmd
@@ -229,6 +287,9 @@ if NVRAM
 	ora	a
 	jz	nvsok
 endif
+	lda	mpm
+	ora	a
+	cnz	nlock
 	; set Sn_MR separate, to avoid writing CR and SR...
 	call	getsokn
 	mov	d,a
@@ -285,10 +346,10 @@ ntopn:	lxi	h,newsok
 	pop	d
 	mvi	e,SnPORT
 	mvi	b,soklen-SnPORT
-	jmp	setit
+	jmp	setit	; mutex held
 
 if NVRAM
-nvsok:
+nvsok:	; lock not held
 	call	getnvsok
 	lhld	nskpt	; big endian data, little endian load...
 	stx	l,SnPORT
@@ -304,7 +365,7 @@ nvsok:
 	stx	h,SnDPORT+1
 	lda	nskkp
 	stx	a,NvKPALVTR	; force to 00 if not set
-	jmp	nvsetit
+	jmp	nvsetit	; lock must not be held
 
 ; Returns IX=socket 'sokn' in nvbuf
 getnvsok:
@@ -320,7 +381,7 @@ getnvsok:
 	ret
 endif
 
-delsok:	; delete the socket config
+delsok:	; delete the socket config - lock must not be held
 if NVRAM
 	lda	direct
 	ora	a
@@ -330,7 +391,7 @@ if NVRAM
 	dcr	a	; FF
 	stx	a,SnPORT
 	stx	a,SnPORT+1
-	jmp	nvsetit
+	jmp	nvsetit	; lock must not be held
 delsok0:
 endif
 	xra	a
@@ -384,7 +445,7 @@ pars2:
 	jc	help
 	mvi	b,4
 	; got it...
-setit0:
+setit0:	; lock not held
 if NVRAM
 	lda	direct
 	ora	a
@@ -397,10 +458,20 @@ if NVRAM
 	mov	c,b
 	mvi	b,0
 	ldir
-	jmp	nvsetit
+	jmp	nvsetit	; lock must not be held
 endif
-setit:
+setit:	; lock not held
+	push	h
+	push	b
+	lda	mpm
+	ora	a
+	cnz	nlock	; preserves DE, IX
+	pop	b
+	pop	h
 	call	wizset
+	lda	mpm
+	ora	a
+	cnz	nunlock
 
 	;lxi	d,done
 	;mvi	c,print
@@ -408,11 +479,14 @@ setit:
 	jmp	exit
 
 if NVRAM
-nvshow:	; show config from NVRAM
+nvshow:	; show config from NVRAM. lock held (if mpm)
 	lxix	nvbuf
 	lxi	h,0
 	lxi	d,512
 	call	nvget
+	lda	mpm
+	ora	a
+	cnz	nunlock
 	call	vcksum
 	jnz	cserr
 	lda	nvbuf+PMAGIC
@@ -489,7 +563,15 @@ pars5:	; restore config from NVRAM
 	mvi	c,print
 	call	bdos
 xocpnt:
+	lda	mpm
+	ora	a
+	cnz	nlock
 	call	wizcfg
+	push	psw
+	lda	mpm
+	ora	a
+	cnz	nunlock
+	pop	psw
 	jc	cserr
 	jmp	exit
 	;...
@@ -521,7 +603,7 @@ locdv0:
 	mov	m,a
 	inx	h
 	mov	m,a
-	jmp	nvsetit
+	jmp	nvsetit	; lock must not be held
 
 netwk:	; skipb already called
 	lda	direct
@@ -563,7 +645,7 @@ netwk1:
 	jz	help
 netwk2:
 	stx	d,+1
-	jmp	nvsetit
+	jmp	nvsetit	; lock must not be held
 netlst:
 	mvi	c,'['
 	call	parshx	; get LST: num
@@ -577,12 +659,18 @@ netlst:
 	mov	a,d
 	jr	netwk1
 
-nvsetit:
+nvsetit:	; lock not held
+	lda	mpm
+	ora	a
+	cnz	nlock
 	lxix	nvbuf
 	call	scksum
 	lxi	h,0	; WIZNET uses 512 bytes at 0000 in NVRAM
 	lxi	d,512
 	call	nvset
+	lda	mpm
+	ora	a
+	cnz	nunlock
 	;lxi	d,done
 	;mvi	c,print
 	;call	bdos
@@ -639,6 +727,9 @@ getsokn:
 	ret
 
 show:
+	lda	mpm
+	ora	a
+	cnz	nlock
 if NVRAM
 	lda	direct
 	ora	a
@@ -652,6 +743,9 @@ endif
 	lxi	d,PMAGIC
 	mvi	b,3	; get possible server listening port
 	call	wizget
+	lda	mpm
+	ora	a
+	cnz	nunlock
 
 	lda	wizmag
 	call	shid
@@ -678,12 +772,18 @@ endif
 	mvi	b,nsock
 show0:	push	b
 	push	d
+	lda	mpm
+	ora	a
+	cnz	nlock
 	mvi	e,0
 	lxi	h,sokregs
 	mvi	b,soklen
 	call	wizget
 	call	gkeep
 	sta	sokkp
+	lda	mpm
+	ora	a
+	cnz	nunlock
 	pop	d
 	push	d
 	call	showsok
@@ -1144,10 +1244,16 @@ if NVRAM
 ; Get a block of data from NVRAM to 'buf'
 ; Verify checksum, init block if needed.
 nvgetb:
+	lda	mpm
+	ora	a
+	cnz	nlock
 	lxix	nvbuf
 	lxi	h,0
 	lxi	d,512
 	call	nvget
+	lda	mpm
+	ora	a
+	cnz	nunlock
 	call	vcksum
 	rz	; chksum OK, ready to update/use
 	lxi	d,newbuf
@@ -1400,13 +1506,14 @@ shlst1:	mvi	c,print
 	ret
 
 	dseg
-	ds	40
+	ds	80
 stack:	ds	0
 usrstk:	dw	0
 
 if NVRAM
 direct:	db	0
 endif
+mpm:	db	0
 cpnet:	db	0
 netcfg:	dw	0
 count:	db	0

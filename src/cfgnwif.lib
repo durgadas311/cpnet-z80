@@ -85,7 +85,8 @@ G$LOG	equ	6	; Array[16] of logged-in NIDs, per G$VEC
 G$PWD	equ	22	; login password (8 bytes)
 G$LEN	equ	22	; length exported, password never revealed.
 G$CMD	equ	30	; "command" (startup,shutdown,...)
-G$ALL	equ	31	; total length
+G$MTX	equ	31	; mutex (QCB) used to mutex NIOS
+G$ALL	equ	33	; total length
 ; G$CMD values:
 NWSTOP	equ	0
 NWSTART	equ	1
