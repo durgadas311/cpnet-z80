@@ -8,11 +8,12 @@
 ; This also requires that the temporary drive not be a protected drive,
 ; or else spooling may not work.
 ; By default, drive A: is protected (RESNTSRV.ASM).
+	maclib	z80
 	maclib	config
 	maclib	cfgnwif
 
 	public	pinit,srvlgo
-	extrn	bdos,cfgadr,nlock,nunlock,nwq0p
+	extrn	bdos,cfgadr,nlock,nunlock,nwq0p,roveca
 	extrn	bffree,rqfree
 	extrn	NTWKIN,NTWKST,SNDMSG,RCVMSG,NWPOLL,NTWKER,NTWKDN,NWLOGO
 
@@ -173,29 +174,29 @@ fnctab:	db	0	; 00
 	db	16	; 16 - close
 	db	8	; 17 - search first
 	db	8	; 18 - search next
-	db	7	; 19 - delete
+	db	7	; 19 - delete * prot
 	db	16	; 20 - read seq
-	db	16	; 21 - write seq
-	db	16	; 22 - make
-	db	7	; 23 - rename
+	db	17	; 21 - write seq * prot
+	db	17	; 22 - make * prot
+	db	7	; 23 - rename * prot
 	db	9	; 24 - get login vector
 	db	0	; 25 - get cur dsk
 	db	0	; 26 - set dma adr
 	db	11	; 27 - get addr (alloc)
 	db	5	; 28 - write-prot disk
-	db	9	; 29 - get R/O vector
-	db	7	; 30 - set file attrs
+	db	9	; 29 - get R/O vector * prot added
+	db	7	; 30 - set file attrs * prot
 	db	11	; 31 - get addr (DPB)
 	db	0	; 32 - set/get user num
 	db	16	; 33 - read rand
-	db	16	; 34 - write rand
+	db	17	; 34 - write rand * prot
 	db	16	; 35 - comp file size
 	db	16	; 36 - set rand rec
 	db	5	; 37 - reset drive(s) (vector)
 	db	5	; 38 - access drive(s) (vector)
 	db	5	; 39 - free drive(s) (vector)
-	db	16	; 40 - write rand w/zero
-	db	0	; 41 - test and write record
+	db	17	; 40 - write rand w/zero * prot
+	db	0	; 41 - test and write record * prot
 	db	16	; 42 - lock record
 	db	16	; 43 - unlock record
 	db	0	; 44 - set multi-sec count
@@ -204,10 +205,10 @@ fnctab:	db	0	; 00
 	db	0	; 47 - chain to program
 	db	0	; 48 - flush buffers
 	db	0	; 49 - get/set SCB
-	db	0	; 50 = 100 (BIOS calls)  Set DIR label
+	db	0	; 50 = 100 (BIOS calls)  Set DIR label * prot
 	db	0	; 51 = 101 - Get DIR label
 	db	0	; 52 = 102 - Get File date/pwd mode
-	db	0	; 53 = 103 - Write file XFCB
+	db	0	; 53 = 103 - Write file XFCB * prot
 	db	0	; 54 = 104 - Set Time/Date
 	db	0	; 55 = 105 - Get Time/Date
 	db	12	; 56 = 106 - Set Default Password
@@ -238,9 +239,9 @@ fncptr:	dw	neterr	; 0
 	dw	conin	; 4 - CON: input direct
 	dw	seldsk	; 5 - select disk
 	dw	getcfg	; 6 - get srv cfg
-	dw	smpfcb	; 7 - delete,rename,set-attr
+	dw	smpfcb	; 7 - delete,rename,set-attr - R/O prot
 	dw	search	; 8 - search first/next
-	dw	drvvec	; 9 - get drive vectors
+	dw	drvvec	; 9 - get drive vectors (add R/O vec)
 	dw	netnul	; 10 - not used
 	dw	getadr	; 11 - get DPB/ALV
 	dw	defpwd	; 12 - set def pwd
@@ -248,6 +249,7 @@ fncptr:	dw	neterr	; 0
 	dw	logout	; 14 - logout requester
 	dw	cmpatr	; 15 - set compat attr
 	dw	stdfcb	; 16 - std FCB functions
+	dw	rovfcb	; 17 - R/O protected FCB functions
 
 ; 16-bit bit-wise AND of DE with (HL)
 ; Returns DE=result, HL incremented once, A=D
@@ -460,11 +462,6 @@ cpnet:	lxi	h,-@init
 	mov	m,d	; ?procd=our-proc-desc
 	inx	h
 	xchg		; DE=?msgqi, HL=pdadr
-	push	d	; off=2
-	lxi	d,P$ATTR
-	dad	d
-	mvi	m,def$prot
-	pop	d	; off=0
 	lxi	h,@uqcbi+Q$MSG+0
 	dad	sp	; HL=?uqcbi.MSGADR
 	mov	m,e
@@ -889,6 +886,9 @@ getcfg:	pop	h	; off=0 (HL=MSGBUF)
 
 ; simple  FCB funcs: delete,rename,set-attrs
 smpfcb:	pop	h	; off=0 (HL=MSGBUF)
+	push	h	; off=2
+	call	ro$chk
+	pop	h	; off=0 (HL=MSGBUF)
 	lxi	d,DAT
 	dad	d	; HL=MSGBUF.DAT
 	push	h	; off=2
@@ -1050,8 +1050,18 @@ drvvec:	pop	h	; off=0 (HL=MSGBUF)
 	mvi	m,2-1	; response SIZ is 2
 	push	h	; off=2
 	call	bdos
+ if 0	; TODO: only do this for FNC 29
+	lded	roveca
+	ldax	d
+	ora	l
+	mov	l,a
+	inx	d
+	ldax	d
+	ora	h
+	mov	h,a
+ endif
 	xchg
-	pop	h	; off=0 (HL=MSGBUF.SIZ
+	pop	h	; off=0 (HL=MSGBUF.SIZ)
 	inx	h
 	mov	m,e	; MSGBUF.DAT[0]
 	inx	h
@@ -1284,11 +1294,6 @@ cmpatr:	mvi	c,sysdatf
 	lxi	h,P$ATTR
 	dad	d
 	jz	cmpa0
-	ani	11110000b
-	mov	e,a
-	mov	a,m
-	ani	00001111b
-	ora	e
 	mov	m,a	; set compat attrs
 cmpa0:	ora	a
 	jnz	sndbak
@@ -1322,6 +1327,39 @@ cmpa1:	pop	h	; off=0 (HL=proc desc)
 	call	bdos
 	jmp	sndbak
 
+; off=4 HL=MSGBUF
+; Aborts if R/O
+ro$chk:	lxi	d,DAT+1
+	dad	d
+	mov	a,m	; drive - cannot be 0
+	push	h
+	lxi	h,0001h	; drive A:
+roc0:	dcr	a
+	jrz	roc1
+	dad	h
+	jr	roc0
+roc1:	lded	roveca
+	ldax	d
+	ana	l
+	jrnz	roc2
+	inx	d
+	ldax	d
+	ana	h
+roc2:	pop	h
+	rz
+	; drive is R/O, reject operation
+	pop	d	; off=2 discard ret adr
+	pop	d	; off=0 discard MSGBUF
+	mvi	m,002h	; R/O disk error
+	dcx	h
+	mvi	m,0ffh
+	dcx	h
+	mvi	m,2-1
+	jmp	sndbak
+
+rovfcb:	pop	h	; off=0 (HL=MSGBUF)
+	push	h	; off=2
+	call	ro$chk
 stdfcb:	pop	h	; off=0 (HL=MSGBUF)
 	lxi	d,DAT
 	dad	d
@@ -1499,8 +1537,6 @@ ps2:	; DE=stack-end, HL=proc-desc
 	pop	d	; DE=proc-desc
 	push	d	;
 	push	b	;
-	; process create will zero compat attr,
-	; must setup write-protect later.
 	mvi	c,makepf
 	call	bdos	; create new process
 	pop	b

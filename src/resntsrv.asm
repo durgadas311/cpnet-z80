@@ -136,5 +136,6 @@ CFGTBL:
 	db	'PASSWORD' 	; login password (DRI convention)
 	db	0		; cmd: start/stop server
 	dw	0		; exported mutex for network (may be MXDisk).
+	dw	def$prot	; initial R/O vector
 
 	end

@@ -15,7 +15,7 @@
 ; perform the requested function and then acquire 'nmutex' and send
 ; the response back over network.
 
-	public	bdos,cfgadr,cfgcmd,nlock,nunlock,nwq0p
+	public	bdos,cfgadr,cfgcmd,nlock,nunlock,nwq0p,roveca
 	extrn	recvr	; The network receiver loop entry
 	extrn	qinit	; QCB/UQCB setup for message queues
 	extrn	pinit	; (Server) process(es) setup
@@ -51,6 +51,12 @@ bdos$adr:	dw	$-$
 cfgadr:		dw	$-$
 nwq0p:		dw	$-$
 cfgcmd:		dw	$-$
+roveca:		dw	$-$
+
+; UQCB for 'MXServer' - pre-filled (no open)
+smutex:	dw	0	; filled in by 'setup'
+;	ds	2	; no MSGADR
+;	ds	8	; no NAME - not opened
 
 ; UQCB for 'MXNetwrk' - pre-filled (no open)
 nmutex:	dw	0	; filled in by 'setup'
@@ -142,6 +148,8 @@ setup:
 	mov	m,e
 	inx	h
 	mov	m,d	; this makes G$MTX a real UQCB
+	inx	h
+	shld	roveca	; save R/O vector addr
 	; set CFGTBL into system data page
 	mvi	c,sysdatf
 	call	bdos
