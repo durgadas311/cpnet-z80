@@ -39,25 +39,10 @@ operations, which then ensures disk and network operations won't collide.
 
 ## System Drive protection
 This server provides a method of protecting drive A: from being written by
-CP/NET clients. The server processes all set a special bit in their
-process descriptor that informs the XIOS that they should not write to A:.
-It is then up to the XIOS to implement a check of this when performing
-WRITE operations, and preventing the actual write. Note that this also
-requires that the "temporary file drive" not be set to A: (for spooling,
-client MAIL.COM, etc).
-
-Typical XIOS code to check for write-protect is:
-
- 1. get process descriptor address from XDOS internal data segment "osrlr"
-(Run List Root) field, which always points to the current running process.
- 1. offset to byte +29 (+1dh), the compatibility attributes,
-and check the low 4 bits. Bit 0 represents drive A:
- 1. if drive A: is being written, and bit 0 is "1", then return error code "2"
-(R/O disk).
-
-Only the high 4 bits of the compatibility attributes byte are currently used.
-The low 4 bits may be used to represent a "R/O vector" for drives A:-D:,
-if the XIOS honors that and checks the bits against the drive being written.
+CP/NET clients. A private R/O vector is maintained in the NETSERVR.RSP
+and any CP/NET function that alters files (or directories) will check
+this R/O vector against the drive being accessed, and return a "R/O Disk"
+error if appropriate.
 The server code only sets bit 0, but the value is taken from the configuration
 file cfgntwrk.lib and may be changed. It is also possible to make these bits
 dynamic, altered by a "protect" program (this has not been implemented).
