@@ -67,7 +67,9 @@ static void help(char *arg0) {
 			"    -g GW   Gateway IP addr\n"
 			"    -s MS   Subnet mask\n"
 			"    -m MA   MAC address\n"
+			"    -p PT   Server port\n"
 			"    -# SID,IP,PT[,KP] Socket # (0-7) definition\n"
+			"    -x #    Socket # (0-7) deletion\n"
 		, arg0);
 }
 
@@ -76,7 +78,7 @@ static void show(struct wizcfg *cfg) {
 	int x;
 	struct wizsok *sok;
 
-	printf("Node ID:  %2XH\n", cfg->pmagic);
+	printf("Node ID:  %02XH\n", cfg->pmagic);
 	printf("IP Addr:  %d.%d.%d.%d\n",
 		cfg->sipr[0], cfg->sipr[1], cfg->sipr[2], cfg->sipr[3]);
 	printf("Gateway:  %d.%d.%d.%d\n",
@@ -86,6 +88,10 @@ static void show(struct wizcfg *cfg) {
 	printf("MAC:      %02X:%02X:%02X:%02X:%02X:%02X\n",
 		cfg->shar[0], cfg->shar[1], cfg->shar[2],
 		cfg->shar[3], cfg->shar[4], cfg->shar[5]);
+	ns = (cfg->port[0] << 8) | cfg->port[1];
+	if (ns != 0 && ns != 0xffff) {
+		printf("Srv Port: %d\n", ns);
+	}
 	ns = 0;
 	for (x = 0; x < 8; ++x) {
 		sok = &cfg->sockets[x];
@@ -180,6 +186,10 @@ int parse_keep(uchar *out, char *str) {
 static int parse_sok(struct wizsok *sok, char *str) {
 	char *s0, *s1, *s2, *s3;
 	if (str == NULL) return 0;
+	if (str == (char *)-1)  {
+		sok->cpnet = 0xff;
+		return 0;
+	}
 	s0 = strtok(str, ",");
 	s1 = strtok(NULL, ",");
 	s2 = strtok(NULL, ",");
@@ -200,6 +210,7 @@ static char *sipr = NULL;
 static char *gar = NULL;
 static char *subr = NULL;
 static char *shar = NULL;
+static char *lport = NULL;
 static char *soks[8] = { NULL };
 
 int parse(struct wizcfg *cfg) {
@@ -209,6 +220,7 @@ int parse(struct wizcfg *cfg) {
 	if (parse_ip(cfg->subr, subr) < 0) return -1;
 	if (parse_ip(cfg->gar, gar) < 0) return -1;
 	if (parse_mac(cfg->shar, shar) < 0) return -1;
+	if (parse_port(cfg->port, lport) < 0) return -1;
 	for (x = 0; x < 8; ++x) {
 		if (parse_sok(&cfg->sockets[x], soks[x]) < 0) return -1;
 	}
@@ -228,7 +240,7 @@ int main(int argc, char **argv) {
 	extern char *optarg;
 	extern int optind;
 
-	while ((x = getopt(argc, argv, "n:i:g:s:m:0:1:2:3:4:5:6:7:v")) != EOF) {
+	while ((x = getopt(argc, argv, "n:i:g:s:m:p:0:1:2:3:4:5:6:7:vx:")) != EOF) {
 		switch (x) {
 		case 'n':
 			cid = optarg;
@@ -250,6 +262,10 @@ int main(int argc, char **argv) {
 			shar = optarg;
 			++set;
 			break;
+		case 'p':
+			lport = optarg;
+			++set;
+			break;
 		case '0':
 		case '1':
 		case '2':
@@ -264,7 +280,14 @@ int main(int argc, char **argv) {
 		case 'v':
 			++verbose;
 			break;
+		case 'x':
+			if (*optarg < '0' || *optarg > '7') {
+				goto error;
+			}
+			soks[*optarg - '0'] = (char *)-1;
+			break;
 		default:
+error:
 			help(argv[0]);
 			return 1;
 		}

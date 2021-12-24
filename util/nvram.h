@@ -29,7 +29,7 @@ struct wizcfg {
 	uchar	sipr[4];	// client IP address
 	uchar	_resv2[10];
 	uchar	pmagic;		// client CP/NET node ID
-	uchar	_resv3[2];
+	uchar	port[2];	// server listening port
 
 	struct wizsok sockets[8];
 
