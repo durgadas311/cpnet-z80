@@ -285,6 +285,7 @@ int main(int argc, char **argv) {
 				goto error;
 			}
 			soks[*optarg - '0'] = (char *)-1;
+			++set;
 			break;
 		default:
 error:
