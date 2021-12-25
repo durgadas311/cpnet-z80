@@ -39,13 +39,15 @@ operations, which then ensures disk and network operations won't collide.
 
 ## System Drive protection
 This server provides a method of protecting drive A: from being written by
-CP/NET clients. A private R/O vector is maintained in the NETSERVR.RSP
+CP/NET clients. A private R/O vector is maintained in NETSERVR.RSP
 and any CP/NET function that alters files (or directories) will check
 this R/O vector against the drive being accessed, and return a "R/O Disk"
 error if appropriate.
-The server code only sets bit 0, but the value is taken from the configuration
-file cfgntwrk.lib and may be changed. It is also possible to make these bits
-dynamic, altered by a "protect" program (this has not been implemented).
+The server by default only sets bit 0 (drive A:),
+but that value is taken from the configuration
+file cfgntwrk.lib and may be changed.
+It is also possible to modify the
+active R/O vector using the program SRVPROT.COM.
 
 ## NIOS
 The NIOS interface is similar to the client SNIOS interface, with some
