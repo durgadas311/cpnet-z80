@@ -39,7 +39,7 @@ operations, which then ensures disk and network operations won't collide.
 
 ## System Drive protection
 This server provides a method of protecting drive A: from being written by
-CP/NET clients. A private R/O vector is maintained in NETSERVR.RSP
+CP/NET requesters. A private R/O vector is maintained in NETSERVR.RSP
 and any CP/NET function that alters files (or directories) will check
 this R/O vector against the drive being accessed, and return a "R/O Disk"
 error if appropriate.
@@ -90,3 +90,101 @@ This is called, with the client node ID in A, when the client is logged off
 for any reason.
 This is in contrast to NTWKDN which effectively disconnects ALL clients
 and the network itself (e.g. stops listening for socket connections).
+
+## Configuring the build
+
+### Number of Requesters
+The number of requesters is set by the symbol 'nmb$rqstrs' in
+the NIC config.lib file, for example "src/w5500/config.lib". This number
+affects the amount of common memory consumed by NETSERVR.RSP, and so needs
+to be kept within reason. In the case of the WizNET W5500 NIC, the maximum
+value is 7 based on the architecture of the chip. The total space used by
+NETSERVR.RSP is computed as follows:
+```
+bytes = (nmb$rqstrs + 2) * 26 + (nmb$rqstrs + 1) * 52 + 37
+```
+Since NETSERVR.RSP is allocated only full pages (256 byte),
+this number will be rounded up.
+
+The absolute maximum value is 16, based on how process and queue
+names are created (a single hex digit is inserted in the process or queue name).
+Larger numbers are theoretically possible, but
+will require changes to the initialization code that creates the processes and queues.
+
+This number also affects memory used in the banked part of NETSERVR,
+which must also be considered. The amount of banked memory used for
+per-requester structures is:
+```
+bytes = nmb$rqstrs * 7 + (nmb$rqstrs + 1) * 263
+```
+This is in addition to the rest of the banked code and data for NETSERVR.BRS.
+
+### Mutual Exclusion Granularity
+On some systems, such as those using disk devices attached to the same
+SPI adapter as the NIC, it is necessary to prevent MP/M from accessing disks while
+server processes access the network.
+In these cases the symbol 'use$mxdisk' needs to be set to "1"
+in the NIC config.lib file, for example "src/w5500/config.lib".
+If the network hardware is completely independent of *all* disk
+hardware, then this symbol may be set to "0", providing more
+concurrency between network and disk operations.
+
+### Polling Network Driver
+NOT IMPLEMENTED. A general-purpose scheme for enabling network device polling,
+suitable for any/all XIOS implementations, has not been discovered yet.
+The symbol 'polling' in the NIC config.lib file should be set to "0".
+
+### Requester R/O Vector
+The default drive protection (requester R/O) vector is set to only drive A:
+by the symbol 'def$prot' in the file "src/cfgnwif.lib".
+If it is necessary to have different drives protected by default -
+i.e. if SRVPROT cannot be used to alter the protection after booting -
+then this symbol value may be changed to the desired protection.
+The symbol value is a 16-bit number where drive A: is represented by
+bit 0 and drive P: by bit 15.
+
+No other values should be altered in this file.
+
+## Server Commands
+
+### SRVSTART.COM
+This command is used to start the server after boot, or after SRVSTOP.
+
+### SRVSTOP.COM
+This command is used to shutdown (stop) the server. The server is restartable.
+Note that this will abruptly terminate network connections.
+This may have undesirable affects on requesters, depending on the network
+implementation.
+Ideally, all requesters would have un-mapped all drives and logged off.
+
+### SRVPROT.COM
+This command is used to alter the requester R/O vector that protects selected
+MP/M drives from being altered by requesters. This vector may be changed at any time,
+however active requesters will use whatever value is in effect at the instant
+they begin their current operation.
+
+### SRVSTAT.COM
+This command displays the CP/NET Server configuration table for the local system.
+
+## Design Details
+
+### Mutexing
+NETSERVR creates two mutexes.
+'MXServer' is used to "park" the server while waiting for SRVSTART.
+'MXNetwrk' is used to control access to the network hardware (NIOS),
+unless 'use$mxdisk' is set to "1" (in which case 'MXDisk' is used to control
+access to NIOS). The actual mutex being used to control access to the
+network hardware is "exported" at offset 31 in the server config table.
+This may be used by utilities (e.g. WIZCFG.COM) to prevent collisions
+with the server.
+
+### Drive protection
+The requester R/O vector is kept at offset 33 in the server config table.
+SRVPROT accesses the R/O vector through the server config table address
+obtained from the MP/M system data area.
+
+### Server control
+The server operation is controlled through a "command byte" at offset 30
+in the server config table.
+This byte is used in conjunction with the 'MXServer' mutex to start and shutdown
+the server.

@@ -1,10 +1,10 @@
 ; Constants for MP/M CP/NET Server
 ; (use caution if making changes)
+def$prot	equ	0001b	; default write-protect drives vector
 
 nmb$bufs	equ	nmb$rqstrs+1	; Number of message buffers
 srvr$stk$len	equ	150	; server process stack size
 qcb$out$buf	equ	2*nmb$bufs	; length of qcb$out buffer
-def$prot	equ	0001b	; default write-protect drives vector
 ;
 ; ASCII control characters
 cr	equ	13
