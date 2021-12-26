@@ -1048,9 +1048,13 @@ drvvec:	pop	h	; off=0 (HL=MSGBUF)
 	mov	c,m	; FNC
 	inx	h
 	mvi	m,2-1	; response SIZ is 2
-	push	h	; off=2
+	push	h	; off=2 (MSGBUF.SIZ)
+	push	b
 	call	bdos
- if 0	; TODO: only do this for FNC 29
+	pop	b
+	mov	a,c
+	cpi	29	; Func 29 Get R/O Vector
+	jrnz	dv0
 	lded	roveca
 	ldax	d
 	ora	l
@@ -1059,8 +1063,7 @@ drvvec:	pop	h	; off=0 (HL=MSGBUF)
 	ldax	d
 	ora	h
 	mov	h,a
- endif
-	xchg
+dv0:	xchg		; DE=drive vector
 	pop	h	; off=0 (HL=MSGBUF.SIZ)
 	inx	h
 	mov	m,e	; MSGBUF.DAT[0]

@@ -21,7 +21,7 @@ That requester uses the same server process until it logs off
 (or is otherwise disconnected).
 
 ## CP/M 3 - CP/NET3
-This server does not currently support CP/M 3 clients.
+This server does not currently support CP/M 3 requesters.
 
 ## Mutual Exclusion
 The server uses a mutex to delay startup of operations until
@@ -49,19 +49,23 @@ file cfgntwrk.lib and may be changed.
 It is also possible to modify the
 active R/O vector using the program SRVPROT.COM.
 
+This private R/O vector is added to the results of requests for
+BDOS function 29 (Get Read/Only Vector),
+so that requesters see what additional protection has been applied.
+
 ## NIOS
-The NIOS interface is similar to the client SNIOS interface, with some
+The server NIOS interface is similar to the requester SNIOS interface, with some
 notable exceptions.
 
 ### Ordering
 Note that the server always calls RCVMSG and then SNDMSG,
-as opposed to the clients which always call SNDMSG and then RCVMSG. This means
-that any dependencies between SNDMSG and RCVMSG are reversed, for example
-regarding discovery and use of network identifiers.
+as opposed to the requesters which always call SNDMSG and then RCVMSG.
+This means that any dependencies between SNDMSG and RCVMSG are reversed,
+for example regarding discovery and use of network identifiers.
 
-In addition, it is no longer guaranteed that the calls to SNDMAG and RCVMSG will be paired
-(adjacent in time). Each message received is passed to a server process based
-on the client node ID, and other messages may be received (or responses sent back)
+In addition, it is no longer guaranteed that paired calls to RCVMSG and SNDMAG will be
+adjacent in time. Each message received is passed to a server process based
+on the requester node ID, and other messages may be received (or responses sent back)
 before that server process completes its request.
 
 ### Entry points
@@ -82,13 +86,13 @@ or at least may require that NWPOLL be called again after the polling process wa
 It will also be necessary for the polling implementation to check the mutex
 and skip the poll if it is held. Since the polling is done inside the dispatcher,
 it is not possible to use XDOS function calls, so the mutex will have to be examined
-directly - but it cannot change while being examined.
+directly - but the mutex will not change while being examined (from inside the dispatcher).
 
 #### NWLOGO
-The NWLOGO routine is used to shutdown one specific connection (client).
-This is called, with the client node ID in A, when the client is logged off
+The NWLOGO routine is used to shutdown one specific connection (requester).
+This is called, with the requester node ID in A, when the requester is logged off
 for any reason.
-This is in contrast to NTWKDN which effectively disconnects ALL clients
+This is in contrast to NTWKDN which effectively disconnects ALL requesters
 and the network itself (e.g. stops listening for socket connections).
 
 ## Configuring the build
