@@ -240,6 +240,7 @@ boot:
 	lda	bdos+2
 	mov	m,a	; BDOS page
 	inx	h
+	push	d
 	lxix	newmap
 	bitx	7,+0	; any new maps?
 	jrnz	nm1
@@ -299,6 +300,7 @@ nm1:	ldx	a,+0
 	inxix
 	jr	nm1
 nm0:
+	pop	d
 	push	h	; save start of string
 	; now pass string, if present
 	mvi	m,0	; len, re-set later
