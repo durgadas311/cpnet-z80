@@ -13,6 +13,7 @@ To build on linux or cygwin you need to install a few packages.
    require customization of the Makefile (CRLFP and CRLF2 variables).
 1. Copy tools/vcpm to a directory on your PATH, and edit it to change
    the JAR variable to match the path to tools/VirtualCpm.jar.
+   See https://github.com/durgadas311/virtual-cpm for more information.
 1. Copy tools/vcpmrc into ~/.vcpmrc, and edit it if you want to customize
    the top level (vcpm_root_dir) directory used for the system drives
    (default: ~/HostFileBdos). If you are running the JAVA CP/NET server
