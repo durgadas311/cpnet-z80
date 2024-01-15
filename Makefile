@@ -18,6 +18,7 @@ NIC = w5500
 #	h8xspi		Heathkit SPI to WIZ850io and NVRAM.
 #	mt011		RC2014 SPI to Featherwing W5500 module.
 #	z180csio	SC126 SPI to W5500 module, NIC=w5500c
+#	duo		Duodyne SPI to WIZ850io and NVRAM.
 # Serial protocol HBAs:
 #	rc-siob		RC2014 main serial port
 #	ins8250		Serial port via INS8250 (or equiv) UART.

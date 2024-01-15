@@ -1,7 +1,8 @@
 ; HBAs for W5500 modules
 H8xSPI	equ	1	; H8xSPI board for H8/H89 systems. Includes NVRAM.
 MT011	equ	2	; MT011_SPI_WIZNET board for RC2014-Z80 systems.
+DUO	equ	3	; Disk I/O board for Duodyne systems.
 ; Other HBAs
-FT245R	equ	3
-VCPNET	equ	4
-Z180CSIO equ	5	; For W5500 variation "w5500c"
+FT245R	equ	4
+VCPNET	equ	5
+Z180CSIO equ	6	; For W5500 variation "w5500c"

@@ -6,6 +6,7 @@ NIC | HBA | Description
 ----|-----|------------
 [w5500](md/W5500.md) | [h8xspi](md/H8XSPI.md) | Heathkit H8/H89 with WIZ850io and NVRAM
 [w5500](md/W5500.md) | [mt011](md/MT011.md) | RC2014 with MT011 and Featherwing W5500
+[w5500](md/W5500.md) | [duo](md/DUO.md) | Duodyne with Disk-I/O, with WIZ850io and NVRAM
 [w5500c](md/W5500.md) | [z180csio](md/Z180CSIO.md) | SC126 Z180 with W5500 breakout board
 [serial](md/SERIAL.md) | [ft245r](md/FT245R.md) | Serial over FT245R USB module, simple protocol
 [serial](md/SERIAL.md) | [USB1232](md/USB1232H.md) | Serial over USB1232H module, simple protocol

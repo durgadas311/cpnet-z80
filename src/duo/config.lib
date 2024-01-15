@@ -1,0 +1,24 @@
+; Disk I/O board for Duodyne (https://github.com/lynchaj/duodyne) system
+; Uses WIZ850io https://www.wiznet.io/product-item/wiz850io/
+; NVRAM (25LC512) is implemented on shared SPI bus
+; SPI interface is based on MT011
+
+SPIDEV	equ	DUO
+NVRAM	equ	1	; true - has NVRAM
+NVWAIT	equ	1	; requires WIP wait
+NVERA	equ	1	; support erase commands
+
+spi	equ	8ch	; base port of Duodyne Disk I/O SPI interface
+
+spi$wr	equ	spi+0	; write and transfer
+spi$rd	equ	spi+1	; read and transfer
+spi$ctl	equ	spi+2	; control port (outputs)
+
+CS0	equ	00001000b
+CS1	equ	00010000b
+CS2	equ	00100000b
+CS3	equ	0	; not available on Duodyne
+
+WZSCS	equ	CS0	; ctl port val for WizNET /CS
+WZRST	equ	0001b	; ctl port val for WizNet /RST
+NVSCS	equ	CS1	; ctl port val for SPI NVRAM 25LC512
