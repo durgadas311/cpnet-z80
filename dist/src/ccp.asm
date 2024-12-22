@@ -117,7 +117,7 @@ print:	;print string starting at b,c until next 00 entry
 prin0:	mov a,m! ora a! rz ;stop on 00
 		inx h! push h ;ready for next
 		call printchar! pop h ;character printed
-	jmp	prin0	;for another character
+		jmp prin0 ;for another character
 ;
 initialize:
 	mvi c,initf! jmp bdos
@@ -191,18 +191,18 @@ renam:	;rename the file given by d,e
 ;
 getuser:
 	;return current user code in a
-	mvi	e,0ffh	;drop through to setuser
+	mvi e,0ffh ;drop through to setuser
 ;
 setuser:
         mvi c,userf! jmp bdos ;sets user number
 ;
 setdiska:
 	;save user#/disk# before possible ^c or transient
-	call	getuser	;code to a
-	sta	curusr
-	add	a! add	a! add	a! add	a	;rot left
+	call getuser ;code to a
+	sta curusr
+	add a! add a! add a! add a ;rot left
 	lxi h,cdisk! ora m ;4b=user, 4b=disk
-	sta	diska	;stored away in memory for later
+	sta diska ;stored away in memory for later
 	ret
 ;
 translate:
@@ -228,7 +228,7 @@ readcom:
 		; the last record is destroyed. It began as the first
 		; command to execute, but after that gets used to store
 		; the record number of the next command to execute.
-		lxi d,subfcb! call open! jnz yessub ;skip if no sub
+                lxi d,subfcb! call open! jnz yessub ;skip if no sub
 			;no submit file, reset for user input
 			lda cdisk! ora a! cnz select! jmp nosub
 		yessub:	mvi a,0ffh! sta submit
@@ -283,7 +283,7 @@ readcomx: ;entry for ERA command - force user input
 		call translate! mov m,a! dcr b! jmp readcom0
 		;
 	readcom1: ;end of scan, h,l address end of command
-		mov m,a	;store a zero
+		mov m,a ;store a zero
 		lxi h,combuf! shld comaddr ;ready to scan to zero
 	ret
 ;
@@ -300,7 +300,7 @@ cselect:
 ;
 setdmabuff:
 	;set default buffer dma address
-	lxi	d,buff	;(drop through)
+	lxi d,buff ;(drop through)
 ;
 setdma:
 	;set dma address to d,e
@@ -309,7 +309,7 @@ setdma:
 del$sub:
 	;delete the submit file, and set submit flag to false
 	lxi h,submit! mov a,m! ora a! rz ;return if no sub file
-	mvi	m,0	;submit flag is set to false
+	mvi m,0 ;submit flag is set to false
 	xra a! call select ;on drive a to erase file
 	lxi d,subfcb! call delete
 	lda cdisk! jmp select ;back to original drive
@@ -317,13 +317,13 @@ del$sub:
 comerr:
 	;error in command string starting at position
 	;'staddr' and ending with first delimiter
-	call	crlf	;space to next line
-	lhld	staddr	;h,l address first to print
+	call crlf ;space to next line
+	lhld staddr ;h,l address first to print
 	comerr0: ;print characters until blank or zero
 		mov a,m! cpi ' '! jz comerr1; not blank
 		ora a! jz comerr1; not zero, so print it
 		push h! call printchar! pop h! inx h
-		jmp	comerr0	; for another character
+		jmp comerr0; for another character
 	comerr1: ;print question mark,and delete sub file
 		mvi a,'?'! call printchar
 		call crlf! call del$sub
@@ -352,16 +352,16 @@ comerr:
 	addh: ;add a to h,l
 		add l! mov l,a! rnc
 		inr h! ret
-;
+		;
 fillfcb0:
 	;equivalent to fillfcb(0)
-	mvi	a,0
+	mvi a,0
 ;
 fillfcb:
 	lxi h,comfcb! call addh! push h! push h ;fcb rescanned at end
 	xra a! sta sdisk ;clear selected disk (in case A:...)
 	lhld comaddr! xchg ;command address in d,e
-	call	deblank	;to first non-blank character
+	call deblank ;to first non-blank character
 	xchg! shld staddr ;in case of errors
 	xchg! pop h ;d,e has command, h,l has fcb address
 	;look for preceding file name A: B: ...
@@ -369,12 +369,12 @@ fillfcb:
 	sbi 'A'-1! mov b,a ;disk name held in b if : follows
 	inx d! ldax d! cpi ':'! jz setdsk ;set disk name if :
 	;
-	setcur:	;set current disk
+	setcur: ;set current disk
 		dcx d ;back to first character of command
 	setcur0:
 		lda cdisk! mov m,a! jmp setname
 	;
-	setdsk:	;set disk to name in register b
+	setdsk: ;set disk to name in register b
 		mov a,b! sta sdisk ;mark as disk selected
 		mov m,b! inx d ;past the :
 	;
@@ -393,28 +393,28 @@ fillfcb:
 		;
 	padname: inx h! mvi m,' '! dcr b! jnz padname
 		;
-	setty:	;set the type field
+	setty: ;set the type field
 		mvi b,3! cpi '.'! jnz padty ;skip the type field if no .
 		inx d ;past the ., to the file type field
-		setty0:	;set the field from the command buffer
+		setty0: ;set the field from the command buffer
 			call delim! jz padty! inx h! cpi '*'! jnz setty1
 			mvi m,'?' ;since * specified! jmp setty2
 			;
-		setty1:	;not a *, so copy to type field
+		setty1: ;not a *, so copy to type field
 			mov m,a! inx d
-		setty2:	;decrement count and go again
+		setty2: ;decrement count and go again
 			dcr b! jnz setty0
 			;
 		;end of type field, truncate
-	trtyp:	;truncate type field
+	trtyp: ;truncate type field
 		call delim! jz efill! inx d! jmp trtyp
 		;
 		padty:	;pad the type field with blanks
 			inx h! mvi m,' '! dcr b! jnz padty
 		;
-	efill:	;end of the filename/filetype fill, save command address
+	efill: ;end of the filename/filetype fill, save command address
 		;fill the remaining fields for the fcb
-	mvi	b,3
+		mvi b,3
 		efill0: inx h! mvi m,0! dcr b! jnz efill0
 		xchg! shld comaddr ;set new starting point
 		;
@@ -434,13 +434,13 @@ intvec:
 	db	'TYPE'
 	db	'SAVE'
 	db	'REN '
-	db	'USER'
+        db      'USER'
 	db	'fnc1'
 	db	'fnc2'
 	db	'fnc3'
 	db	'fnc4'
-intlen	equ	($-intvec)/4 ;intrinsic function length
-serial:	db	0,0,0,0,0,0
+	intlen equ ($-intvec)/4 ;intrinsic function length
+	serial: db 0,0,0,0,0,0
 ;
 ;
 intrinsic:
@@ -448,8 +448,8 @@ intrinsic:
 	lxi h,intvec! mvi c,0 ;c counts intrinsics as scanned
 	intrin0: mov a,c! cpi intlen ;done with scan?! rnc
 		;no, more to scan
-		lxi d,comfcb+1	;beginning of name
-		mvi b,4	;length of match is in b
+		lxi d,comfcb+1 ;beginning of name
+		mvi b,4 ;length of match is in b
 		intrin1: ldax d! cmp m ;match?
 			jnz intrin2 ;skip if no match
 			inx d! inx h! dcr b
@@ -474,12 +474,12 @@ ccpclear:
 ccpstart:
 	;enter here from boot loader
 	lxi sp,stack! push b ;save initial disk number
-	;(high order 4bits=user code, low 4bits=disk#)
+        ;(high order 4bits=user code, low 4bits=disk#)
 	mov a,c! rar! rar! rar! rar! ani 0fh ;user code
 	mov e,a! call setuser ;user code selected
 	;initialize for this user, get $ flag
-	call initialize	;0ffh in accum if $ file present
-	sta submit ;submit flag set if $ file present
+        call initialize ;0ffh in accum if $ file present
+        sta submit ;submit flag set if $ file present
 	mvi c,netcfg! call bdos ;ntwk cfg addr in HL
 	inx h! inx h ;drive A: ntwk cfg
 	mov a,m! ral! jnc notnet ; drive A: networked?
@@ -488,10 +488,10 @@ ccpstart:
 			mvi a,0ffh
 		setsub:	sta submit
 	notnet:
-	pop	b	;recall user code and disk number
+        pop b ;recall user code and disk number
 	mov a,c! ani 0fh ;disk number in accumulator
-	sta	cdisk	;clears user code nibble
-	call	select	;proper disk is selected, now check sub files
+        sta cdisk ;clears user code nibble
+	call select ;proper disk is selected, now check sub files
 	;check for initial command
 	lda comlen! ora a! jnz ccp0	;assume typed already
 ;
@@ -517,14 +517,14 @@ ccp1:	;enter here if user inputs empty line in readcom
 	adi 'A'! call printchar
 	mvi a,'>'! call printchar
  endif
-	call	readcom ;command buffer filled
+	call readcom ;command buffer filled
 ccp0:	;(enter here from initialization with command full)
 	mvi c,cmpattr! mvi e,0! call bdos ;reset compat attrs
 	mvi c,errmod! mvi e,0! call bdos ;reset BDOS error mode
-	lxi	d,buff! call setdma ;default dma address at buff
+	lxi d,buff! call setdma ;default dma address at buff
 	call cselect! sta cdisk ;current disk number saved
-	call	fillfcb0	;command fcb filled
-	cnz	comerr	;the name cannot be an ambiguous reference
+	call fillfcb0 ;command fcb filled
+	cnz comerr ;the name cannot be an ambiguous reference
 	lda sdisk! ora a! jnz userfunc
 		;check for an intrinsic function
 		call intrinsic
@@ -557,7 +557,7 @@ ccp0:	;(enter here from initialization with command full)
 		nofmsg: db 'NO FILE',0
 	;
 	getnumber: ;read a number from the command line
-		call	fillfcb0	;should be number
+		call fillfcb0 ;should be number
 		lda sdisk! ora a! jnz comerr ;cannot be prefixed
 		;convert the byte value in comfcb to binary
 		lxi h,comfcb+1! lxi b,11 ;(b=0, c=11)
@@ -581,7 +581,7 @@ ccp0:	;(enter here from initialization with command full)
 		;
 	movename:
 		;move 3 characters from h,l to d,e addresses
-		mvi	b,3
+		mvi b,3
 		move0: mov a,m! stax d! inx h! inx d
 			dcr b! jnz move0
 		ret
@@ -594,7 +594,7 @@ ccp0:	;(enter here from initialization with command full)
 		xra a! sta comfcb ;clear disk name from fcb
 		lda sdisk! ora a! rz ;no action if not specified
 		dcr a! lxi h,cdisk! cmp m! rz ;already selected
-		jmp	select
+		jmp select
 	;
 	resetdisk:
 		;return to original disk after command
@@ -605,8 +605,8 @@ ccp0:	;(enter here from initialization with command full)
 	;individual intrinsics follow
 direct:
 	;directory search
-	call	fillfcb0	;comfcb gets file name
-	call	setdisk	;change disk drives if requested
+	call fillfcb0 ;comfcb gets file name
+	call setdisk ;change disk drives if requested
 	lxi h,comfcb+1! mov a,m ;may be empty request
 	cpi ' '! jnz dir1 ;skip fill of ??? if not blank
 		;set comfcb to all ??? for current disk
@@ -614,9 +614,9 @@ direct:
 		dir0: mvi m,'?'! inx h! dcr b! jnz dir0
 	;not a blank request, must be in comfcb
 	dir1:	mvi e,0! push d ;E counts directory entries
-		call	searchcom	;first one has been found
-		cz	nofile	;not found message
-	dir2:	jz	endir
+		call searchcom ;first one has been found
+		cz nofile ;not found message
+	dir2:	jz endir
 		;found, but may be system file
 		lda dcnt ;get the location of the element
 		rrc! rrc! rrc! ani 110$0000b! mov c,a
@@ -628,8 +628,8 @@ direct:
 		pop d! mov a,e! inr e! push d
 		;e=0,1,2,3,...new line if mod 4 = 0
 		ani 11b! push psw ;and save the test
-			jnz	dirhdr0	;header on current line
-			call	crlf
+			jnz dirhdr0 ;header on current line
+			call crlf
 			push b! call cselect! pop b
 			;current disk in A
 			adi 'A'! call printbc
@@ -642,7 +642,7 @@ direct:
 		;compute position of name in buffer
 		mvi b,1 ;start with first character of name
 		dir3:	mov a,b! call addhcf ;buff+a+c fetched
-			ani 7fh	;mask flags
+			ani 7fh ;mask flags
 			;may delete trailing blanks
 			cpi ' '! jnz dir4 ;check for blank type
 			pop psw! push psw ;may be 3rd item
@@ -660,7 +660,7 @@ direct:
 			call blank! jmp dir3
 		;
 	dir5:	;end of current entry
-		pop psw	;discard the directory counter (mod 4)
+		pop psw ;discard the directory counter (mod 4)
 	dir6:	call break$key ;check for interrupt at keyboard
 		jnz endir ;abort directory search
 		call searchn! jmp dir2 ;for another entry
@@ -670,11 +670,11 @@ direct:
 ;
 ;
 erase:
-	call	fillfcb0	;cannot be all ???'s
-	cpi	11
-	jnz	erasefile
+	call fillfcb0 ;cannot be all ???'s
+	cpi 11
+	jnz erasefile
 		;erasing all of the disk
-		lxi b,ermsg! call print
+		lxi b,ermsg! call print!
 		call readcomx
 		lxi h,comlen! dcr m! jnz ccp ;bad input
 		inx h! mov a,m! cpi 'Y'! jnz ccp
@@ -692,7 +692,7 @@ erase:
 type:
 	call fillfcb0! jnz comerr ;don't allow ?'s in file name
 	call setdisk! call openc ;open the file
-	jz	typerr	;zero flag indicates not found
+	jz typerr ;zero flag indicates not found
 		;file opened, read 'til eof
 		call crlf! lxi h,bptr! mvi m,255 ;read first buffer
 		type0:	;loop on bptr
@@ -716,7 +716,7 @@ type:
 		typerr:	call resetdisk! jmp comerr
 ;
 save:
-		call getnumber ; value to register a
+		call getnumber; value to register a
 		push psw ;save it for later
 		;
 		;should be followed by a file to save the memory image
@@ -727,7 +727,7 @@ save:
 		pop d! call make ;create a new file on disk
 		jz saverr ;no directory space
 		xra a! sta comrec; clear next record field
-		pop psw	;#pages to write is in a, change to #sectors
+		pop psw ;#pages to write is in a, change to #sectors
 		mov l,a! mvi h,0! dad h! 
 		lxi d,tran ;h,l is sector count, d,e is load address
 	save0:	;check for sector count zero
@@ -743,7 +743,7 @@ save:
 		;
 	save1:	;end of dump, close the file
 		lxi d,comfcb! call close
-		inr a ; 255 becomes 00 if error
+		inr a; 255 becomes 00 if error
 		jnz retsave ;for another command
 	saverr:	;must be full or read only disk
 		lxi b,fullmsg! call print
@@ -758,8 +758,8 @@ rename:
 	;rename a file on a specific disk
 	call fillfcb0! jnz comerr ;must be unambiguous
 	lda sdisk! push psw ;save for later compare
-	call setdisk	;disk selected
-	call searchcom	;is new name already there?
+	call setdisk ;disk selected
+	call searchcom ;is new name already there?
 	jnz renerr3
 		;file doesn't exist, move to second half of fcb
 		lxi h,comfcb! lxi d,comfcb+16! mvi b,16! call move0
@@ -783,22 +783,22 @@ rename:
 		lxi d,comfcb! call renam
 		jmp retcom
 		;
-	renerr1: ; no file on disk
+	renerr1:; no file on disk
 		call nofile! jmp retcom
-	renerr2: ; ambigous reference/name conflict
+	renerr2:; ambigous reference/name conflict
 		call resetdisk! jmp comerr
-	renerr3: ; file already exists
+	renerr3:; file already exists
 		lxi b,renmsg! call print! jmp retcom
-		renmsg:	db 'FILE EXISTS',0
+		renmsg: db 'FILE EXISTS',0
 ;
 user:
 	;set user number
-	call	getnumber	; leaves the value in the accumulator
+	call getnumber; leaves the value in the accumulator
 	cpi 16! jnc comerr; must be between 0 and 15
-	mov	e,a	;save for setuser call
+	mov e,a ;save for setuser call
 	lda comfcb+1! cpi ' '! jz comerr
-	call	setuser	;new user number set
-	jmp	endcom
+	call setuser ;new user number set
+	jmp endcom
 ;
 userfunc:
 	;load user function and set up for execution
@@ -828,7 +828,7 @@ userfunc:
 			mov a,e! ori 0111$0000b! mov e,a
 		compat1: mvi c,cmpattr! call bdos ;set compat mode attrs
 		lxi h,tran ;transient program base
-		load0:	push h	;save dma address
+		load0:	push h ;save dma address
 			xchg! call setdma
 			lxi d,comfcb! call diskread! jnz load1
 			;sector loaded, set new dma address and compare
@@ -839,7 +839,7 @@ userfunc:
 			;
 		load1:	pop h! dcr a! jnz loaderr ;end file is 1
 			lxi d,comfcb! call close ;be nice to servers
-			call	resetdisk	;back to original disk
+			call resetdisk ;back to original disk
 			call fillfcb0! lxi h,sdisk! push h
 			mov a,m! sta comfcb ;drive number set
 			mvi a,16! call fillfcb ;move entire fcb to memory
@@ -857,7 +857,7 @@ userfunc:
 			inr b! inx h! inx d! jmp bmove2
 		bmove3:	;b has character count
 			mov a,b! sta buff
-			call	crlf
+			call crlf
 			;now go to the loaded program
 			call setdmabuff ;default dma
 			call setdiska
@@ -871,7 +871,7 @@ userfunc:
 		userer:	;arrive here on command error
 			call resetdisk! jmp comerr
 			;
-		loaderr: ;cannot load the program
+		loaderr:;cannot load the program
 			lxi d,comfcb! call close ;be nice to servers
 			lxi b,loadmsg! call print
 			jmp retcom
@@ -880,14 +880,14 @@ userfunc:
 ;
 ;
 retcom:	;reset disk before end of command check
-	call	resetdisk
+	call resetdisk
 ;
 endcom:	;end of intrinsic command
-	call	fillfcb0	;to check for garbage at end of line
+	call fillfcb0 ;to check for garbage at end of line
 	lda comfcb+1! sui ' '! lxi h,sdisk! ora m
 	;0 in accumulator if no disk selected, and blank fcb
-	jnz	comerr
-	jmp	ccp
+	jnz comerr
+	jmp ccp
 ;
 ;
 ;
