@@ -498,7 +498,7 @@ FUNTBX:
 	db	fopfi	; 99 - TRUNCATE FILE
 	db	0	; 100 - SET DIR LABEL ****support?****
 	db	fgtdl	; 101 - GET DIR LABEL BYTE
-	db	fgtdl	; 102 - READ FILE DATE-PWD MODE
+	db	fopfi	; 102 - READ FILE DATE-PWD MODE
 	db	0	; 103 - WRITE FILE XFCB ****support?****
 	db	0	; 104 - SET DATE & TIME
 	db	0	; 105 - GET DATE & TIME - can't support here, use SEND NW MESG
