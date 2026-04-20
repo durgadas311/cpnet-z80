@@ -7,6 +7,9 @@ DO;
          BOX 579
          PACIFIC GROVE, CA
          93950
+
+  04/20/2026: showing effective changes for CP/NET.
+              Actual PIP for CP/NET was patched.
     */
 
 DECLARE
@@ -448,7 +451,8 @@ DECLARE ZEROSUP BYTE,  /* ZERO SUPPRESSION */
         CALL SETDMA(.SBUFF(NSOURCE));
         IF (J := DISKREAD(.SOURCE)) <> 0 THEN
             DO; IF J <> 1 THEN
-                CALL ERROR(.('DISK READ ERROR$'));
+                CALL ERROR(.('DISK READ ERROR$')); ELSE
+                CALL CLOSE(.SOURCE);
             /* END - OF - FILE */
             HARDEOF = NSOURCE; /* SET HARD END-OF-FILE */
             SBUFF(NSOURCE) = ENDFILE; I = NBUF;
@@ -1232,9 +1236,7 @@ CHECK$STRINGS: PROCEDURE;
 CLOSEDEST: PROCEDURE(DIRECT);
     DECLARE DIRECT BYTE;
     /* DIRECT IS TRUE IF SECTOR-BY-SECTOR COPY */
-    IF DIRECT THEN
-        /* GET UNFILLED BYTES FROM SOURCE BUFFER */
-        DFUB = SFUB; ELSE DFUB = 0;
+    IF NOT DIRECT THEN DFUB = 0;
         DO WHILE (LOW(NDEST) AND 7FH) <> 0;
         DFUB = DFUB + 1;
         CALL PUTDEST(ENDFILE);
@@ -1264,6 +1266,7 @@ CLOSEDEST: PROCEDURE(DIRECT);
                     END;
                 CALL CRLF;
                 END;
+            CALL CLOSE(.DEST);
             DEST(ROFILE) = DEST(ROFILE) AND 7FH;
             CALL SETIND(.DEST);
             END;
