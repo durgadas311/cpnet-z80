@@ -163,18 +163,21 @@ HBSCFN:	call	0	; filled at init time
 	pop	hl
 	ret		; if not, should make this in-line
 
+drain:	lxi	b,bbuf	; any adr in high memory
+	xra	a	; doesnt really matter
+	call	HBSER	; perform the rest with ROM bank
+drain0:
+HB1RR:	call	0	; filled in at init time
+	cpi	0
+	rz
+HB1GC:	call	0	; filled in at init time
+	jmp	drain0
+
 check:			; check to see if the device is present....
 	call	hbinit	; initialize direct RomWBW calls
 	rc		; fail if errors
-; empty the RomWBW input buffer befor proceeding.
-chklp:
-HB1RR:	call	0	; filled in at init time
-	cpi	0
-	jz	chklp1
-HB1GC:	call	0	; filled in at init time
-	jmp	chklp
-chklp1:	stc		; since you cant unplug the sio port its always
-			; there
+	call	drain	; empty the RomWBW input buffer befor proceeding.
+	stc		; since you cant unplug the sio port its always there
 	cmc
 	ret
 
