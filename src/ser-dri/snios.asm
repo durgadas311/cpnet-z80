@@ -20,14 +20,19 @@
 ; May 24, 2020
 ; Modified for github/durgadas311/cpnet-z80 build environment.
 	maclib	config
+	maclib	z80
 
 	public	NTWKIN,NTWKST,CNFTBL,SNDMSG,RCVMSG,NTWKER,NTWKBT,NTWKDN,CFGTBL
 	extrn	sendby,check,recvby,recvbt
 
+use$bnk	set	use$bnk	; default 0 if not set, no 'U' error
+ if not use$bnk
+BNKCALL	macro	?ctx
+	endm
+ endif
+
 	CSEG
 BDOS	equ	0005h
-
-	maclib	z80
 
 ; Initial Slave Configuration Table - must be first in module
 CFGTBL:
@@ -264,6 +269,7 @@ CNFTBL:
 SNDMSG:			; BC = message addr
 	; TODO: check status 'active'?
 sndmsg0:
+	BNKCALL	send
 	mov	h,b
 	mov	l,c		; HL = message address
 	shld	msg$adr
@@ -338,6 +344,7 @@ Char$in$timeout:
 RCVMSG:			; BC = message addr
 	; TODO: check status 'active'?
 rcvmsg0:
+	BNKCALL	recv
 	mov	h,b
 	mov	l,c		; HL = message address
 	shld	msg$adr
