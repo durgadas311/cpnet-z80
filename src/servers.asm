@@ -1382,16 +1382,16 @@ stdfcb:	pop	h	; off=0 (HL=MSGBUF)
 	dcx	h
 	mov	c,m	; FNC
 	mov	a,c
-	inx	h
+	inx	h	; SIZ
 	cpi	rseqf
 	jz	sfcb0
 	cpi	rrndf
 	jnz	sfcb1
-sfcb0:	mvi	m,getlstf
+sfcb0:	mvi	m,F$LEN+128+1-1	; SIZ = FCB, buf, usrnum
 	jmp	sfcb2
 
 ; neither read seq nor rand, just do it.
-sfcb1:	mvi	m,F$LEN+1-1	; FCB and usrnum only
+sfcb1:	mvi	m,F$LEN+1-1	; SIZ = FCB and usrnum only
 ; common FCB handling
 sfcb2:	inx	h
 	inx	h	; FCB at MSGBUF.DAT[1]
