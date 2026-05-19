@@ -1,0 +1,21 @@
+;  RomWBW serial port, using direct calls.
+
+NVRAM	equ	0	; no NVRAM or special config needed
+
+use$bnk	set	not 0	; i.e. TRUE
+
+sendval	equ	1	; BNLCALL in send context
+recvval	equ	0	; BNLCALL in recv context
+
+BNKCALL	macro	?ctx
+	extrn	HBSER
+	mvi	a,?ctx&val
+	call	HBSER
+	endm
+
+; On a Z180 platform you can use RomWBW configuration setting:
+; ASCISWAP .SET TRUE
+; This will swap the logical ASCI port numbers, so unit 1 is port A.
+; On port A you can use 115200 baud, on port B use 57600 baud because 
+; the Z180 port B has no RTS/CTS signals.
+HBUNIT	equ	1	; use port b (or port a if ports are swapped)
