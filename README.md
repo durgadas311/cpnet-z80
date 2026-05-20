@@ -10,8 +10,8 @@ NIC | HBA | Description
 [w5500c](md/W5500.md) | [z180csio](md/Z180CSIO.md) | SC126 Z180 with W5500 breakout board
 [serial](md/SERIAL.md) | [ft245r](md/FT245R.md) | Serial over FT245R USB module, simple protocol
 [serial](md/SERIAL.md) | [USB1232](md/USB1232H.md) | Serial over USB1232H module, simple protocol
-[serial](md/SERIAL.md) | [rc-siob](md/RC-SIOB.md) | Serial support via FTDI cable for SC131 (RomWBW)
-[serial](md/SERIAL.md) | [rc-hbios](md/RC-HBIOS.md) | Serial support for RomWBW direct calls
+[ser-dri](md/SER-DRI.md) | [rc-siob](md/RC-SIOB.md) | Serial support via FTDI cable for SC131 (RomWBW)
+[ser-dri](md/SER-DRI.md) | [rc-hbios](md/RC-HBIOS.md) | Serial support for RomWBW direct calls
 [ser-dri](md/SER-DRI.md) | [minz](md/MINZ.md) | Serial over MinZ-U ASCI1 port, DRI protocol
 [ser-dri](md/SER-DRI.md) | [ft245r](md/FT245R.md) | Serial over FT245R USB module, DRI protocol
 [ser-dri](md/SER-DRI.md) | [ins8250](md/INS8250.md) | DRI serial protocol over INS8250-like UART
